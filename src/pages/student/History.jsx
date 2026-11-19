@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import StudentComplaintDialog from "../../components/StudentComplaintDialog.jsx";
 import { Button, CategoryText, DepartmentText, Icon, PageTitle, StatusPill, UrgencyBadge } from "../../components/ui.jsx";
-import { downloadCsv, formatDate, semesterStart } from "../../lib/format.js";
+import { downloadCsv, formatDate, semesterStart, currentUrgency } from "../../lib/format.js";
 import { useLang } from "../../lib/i18n.jsx";
 import { CATEGORY_LABELS, DEPARTMENT_LABELS, STATUS_LABELS, label } from "../../lib/labels.js";
 import { useApp } from "../../lib/store.jsx";
@@ -39,7 +39,7 @@ export default function History() {
 
   const exportCsv = () => downloadCsv("siap-riwayat-keluhan.csv", [
     [tr("Referensi", "Reference"), tr("Judul", "Title"), tr("Kategori", "Category"), tr("Unit", "Department"), tr("Urgensi", "Urgency"), tr("Dikirim", "Submitted"), "Status"],
-    ...filtered.map((c) => [c.id, c.subject, label(CATEGORY_LABELS, c.category, lang), label(DEPARTMENT_LABELS, c.department, lang), `${c.ai.urgencyScore}/10`, formatDate(c.createdAt, locale), label(STATUS_LABELS, c.status, lang)]),
+    ...filtered.map((c) => [c.id, c.subject, label(CATEGORY_LABELS, c.category, lang), label(DEPARTMENT_LABELS, c.department, lang), `${currentUrgency(c).score}/10`, formatDate(c.createdAt, locale), label(STATUS_LABELS, c.status, lang)]),
   ]);
 
   const tabs = [["all", tr("Semua", "All")], ["submitted", tr("Terkirim", "Submitted")], ["in_review", tr("Diproses", "In review")], ["resolved", tr("Selesai", "Resolved")]];
@@ -64,7 +64,7 @@ export default function History() {
             {shown.map((c) => <tr key={c.id} tabIndex={0} onClick={() => open(c.id)} onKeyDown={(e) => { if (e.key === "Enter") open(c.id); }}>
               <td><strong>{c.subject}</strong><small>{c.id}{c.anonymous && <> · {tr("anonim", "anonymous")}</>}</small></td>
               <td><span className="cell-two"><CategoryText category={c.category} /><small><DepartmentText department={c.department} /></small></span></td>
-              <td><UrgencyBadge level={c.ai.urgencyLevel} score={c.ai.urgencyScore} compact /></td>
+              <td><UrgencyBadge level={currentUrgency(c).level} score={currentUrgency(c).score} compact /></td>
               <td>{formatDate(c.createdAt, locale)}</td>
               <td><StatusPill status={c.status} /></td>
             </tr>)}
@@ -77,7 +77,7 @@ export default function History() {
         {shown.map((c) => <button key={c.id} className="complaint-card" onClick={() => open(c.id)}>
           <span className="complaint-card-top"><small>{c.id} · {formatDate(c.createdAt, locale)}</small><StatusPill status={c.status} /></span>
           <strong>{c.subject}</strong>
-          <span className="complaint-card-meta"><DepartmentText department={c.department} /><UrgencyBadge level={c.ai.urgencyLevel} score={c.ai.urgencyScore} compact /></span>
+          <span className="complaint-card-meta"><DepartmentText department={c.department} /><UrgencyBadge level={currentUrgency(c).level} score={currentUrgency(c).score} compact /></span>
         </button>)}
         {!shown.length && <p className="muted-line">{tr("Tidak ada keluhan yang cocok.", "No matching complaints.")}</p>}
       </div>

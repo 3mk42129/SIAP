@@ -155,7 +155,13 @@ export const SEED_COMPLAINTS = [
    2,
    "Terima kasih laporannya. Tim IT sudah mengecek access point di lantai 3 dan sedang menunggu perangkat pengganti."
   ],
-  "rating": null
+  "rating": null,
+  "urgency": null,
+  "due": [
+   2,
+   "u-staff-it",
+   "Menunggu access point pengganti dari vendor."
+  ]
  },
  {
   "seq": 2,
@@ -179,7 +185,9 @@ export const SEED_COMPLAINTS = [
   },
   "reassign": null,
   "reply": null,
-  "rating": null
+  "rating": null,
+  "urgency": null,
+  "due": null
  },
  {
   "seq": 3,
@@ -211,7 +219,9 @@ export const SEED_COMPLAINTS = [
   "rating": [
    5,
    "Cepat ditangani, terima kasih!"
-  ]
+  ],
+  "urgency": null,
+  "due": null
  },
  {
   "seq": 4,
@@ -240,7 +250,9 @@ export const SEED_COMPLAINTS = [
   "rating": [
    4,
    ""
-  ]
+  ],
+  "urgency": null,
+  "due": null
  },
  {
   "seq": 5,
@@ -265,7 +277,9 @@ export const SEED_COMPLAINTS = [
   },
   "reassign": null,
   "reply": null,
-  "rating": null
+  "rating": null,
+  "urgency": null,
+  "due": null
  },
  {
   "seq": 6,
@@ -289,7 +303,9 @@ export const SEED_COMPLAINTS = [
   },
   "reassign": null,
   "reply": null,
-  "rating": null
+  "rating": null,
+  "urgency": null,
+  "due": null
  },
  {
   "seq": 7,
@@ -311,7 +327,9 @@ export const SEED_COMPLAINTS = [
   },
   "reassign": null,
   "reply": null,
-  "rating": null
+  "rating": null,
+  "urgency": null,
+  "due": null
  },
  {
   "seq": 8,
@@ -339,7 +357,9 @@ export const SEED_COMPLAINTS = [
    "category": "Athletics and sports"
   },
   "reply": null,
-  "rating": null
+  "rating": null,
+  "urgency": null,
+  "due": null
  },
  {
   "seq": 9,
@@ -363,7 +383,9 @@ export const SEED_COMPLAINTS = [
   },
   "reassign": null,
   "reply": null,
-  "rating": null
+  "rating": null,
+  "urgency": null,
+  "due": null
  },
  {
   "seq": 10,
@@ -389,7 +411,9 @@ export const SEED_COMPLAINTS = [
   },
   "reassign": null,
   "reply": null,
-  "rating": null
+  "rating": null,
+  "urgency": null,
+  "due": null
  },
  {
   "seq": 11,
@@ -416,7 +440,13 @@ export const SEED_COMPLAINTS = [
    "category": "Health and Well-being Support"
   },
   "reply": null,
-  "rating": null
+  "rating": null,
+  "urgency": [
+   7,
+   "u-admin",
+   "Mahasiswa merasa kewalahan — jadwalkan konseling lebih cepat."
+  ],
+  "due": null
  },
  {
   "seq": 12,
@@ -447,6 +477,8 @@ export const SEED_COMPLAINTS = [
   "rating": [
    3,
    "Sudah dibuka lagi, tapi info sebaiknya diumumkan lebih jelas."
-  ]
+  ],
+  "urgency": null,
+  "due": null
  }
 ];

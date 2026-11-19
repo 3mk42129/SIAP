@@ -9,7 +9,7 @@ import { SEED_COMPLAINTS, SEED_USERS } from "./seedData.js";
 // so a complaint sent in one tab shows up for staff in another tab of the same browser.
 // For real multi-device use, swap these reads/writes for a database (e.g. Supabase).
 const KEYS = { users: "siap.users", session: "siap.session", complaints: "siap.complaints", notifications: "siap.notifications", counter: "siap.counter", version: "siap.dataVersion" };
-const DATA_VERSION = 3;
+const DATA_VERSION = 5;
 
 const CATEGORY_BY_DEPARTMENT = Object.fromEntries(Object.entries(DEPARTMENTS).map(([cat, dept]) => [dept, cat]));
 const DAY = 86400000;
@@ -38,12 +38,27 @@ function buildSeed() {
       department = s.reassign.department;
       category = s.reassign.category;
     }
+    let urgency = null;
+    if (s.urgency) {
+      const [score, staffId, reason] = s.urgency;
+      const at = created + 90 * 60000;
+      timeline.push({ id: uid("t"), at, type: "urgency", by: actor(byId[staffId]), from: s.ai.urgencyScore, to: score, text: reason });
+      urgency = { score, reason, by: actor(byId[staffId]), at };
+    }
+    let dueAt = null;
+    if (s.due) {
+      const [daysFromNow, staffId, reason] = s.due;
+      const d = new Date(now + daysFromNow * DAY); d.setHours(17, 0, 0, 0);
+      dueAt = d.getTime();
+      timeline.push({ id: uid("t"), at: created + 2.5 * 3600000, type: "due", by: actor(byId[staffId]), from: null, to: dueAt, text: reason });
+    }
     if (s.status !== "submitted") timeline.push({ id: uid("t"), at: created + 2 * 3600000, type: "status", status: "in_review", by: actor(byId["u-admin"]) });
     if (s.reply) {
       const [staffId, daysAgo, text] = s.reply;
       timeline.push({ id: uid("t"), at: Math.max(created + 3 * 3600000, now - daysAgo * DAY), type: "reply", by: actor(byId[staffId]), text });
     }
     if (s.status === "resolved") timeline.push({ id: uid("t"), at: Math.max(created + 4 * 3600000, now - (s.reply?.[1] ?? 1) * DAY + 600000), type: "status", status: "resolved", by: actor(byId["u-admin"]) });
+    timeline.sort((x, y) => x.at - y.at);
     const last = timeline[timeline.length - 1].at;
     return {
       id: makeId(s.seq, new Date(created)),
@@ -58,6 +73,8 @@ function buildSeed() {
       ai: { ...s.ai, modelVersion: MODEL_VERSION },
       category,
       department,
+      urgency,
+      dueAt,
       status: s.status,
       createdAt: created,
       updatedAt: last,
@@ -190,7 +207,7 @@ export function AppProvider({ children }) {
       student: { name: user.name, email: user.email, nim: user.nim, major: user.major, campus: user.campus },
       anonymous, subject: subject.trim(), details: details.trim(), location: location.trim(), photos,
       language: detectLanguage(details), ai: { ...ai, modelVersion: MODEL_VERSION },
-      category: ai.category, department: ai.department, status: "submitted",
+      category: ai.category, department: ai.department, urgency: null, dueAt: null, status: "submitted",
       createdAt: now, updatedAt: now, firstResponseAt: null, resolvedAt: null,
       timeline: [{ id: uid("t"), at: now, type: "created", by: actor() }], rating: null,
     };
@@ -242,6 +259,29 @@ export function AppProvider({ children }) {
     if (target) saveNotifications(notify(live.current.notifications, staffFor(department).filter((r) => r !== user.id), id, { id: `Keluhan ${id} dialihkan ke unit Anda.`, en: `Complaint ${id} was reassigned to your department.` }));
   };
 
+  // Staff override of the AI urgency score. The AI's own score stays in c.ai, so both can be used for retraining.
+  const setUrgency = (id, score, reason = "") => updateComplaint(id, (c) => {
+    const from = c.urgency?.score ?? c.ai.urgencyScore;
+    const backToAi = score === c.ai.urgencyScore;
+    return {
+      ...c,
+      urgency: backToAi ? null : { score, reason: reason.trim(), by: actor(), at: Date.now() },
+      timeline: [...c.timeline, { id: uid("t"), at: Date.now(), type: "urgency", by: actor(), from, to: score, text: reason.trim() }],
+    };
+  });
+
+  // Staff deadline for finishing the complaint. null = back to the automatic first-response target.
+  const setDueDate = (id, dueAt, reason = "") => {
+    const fmt = (loc) => new Intl.DateTimeFormat(loc, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(dueAt);
+    updateComplaint(id, (c) => ({
+      ...c, dueAt,
+      timeline: [...c.timeline, { id: uid("t"), at: Date.now(), type: "due", by: actor(), from: c.dueAt || null, to: dueAt, text: reason.trim() }],
+    }), dueAt ? {
+      id: `Perkiraan selesai keluhan ${id}: ${fmt("id-ID")}.`,
+      en: `Expected completion for ${id}: ${fmt("en-GB")}.`,
+    } : null);
+  };
+
   const rate = (id, stars, comment) => updateComplaint(id, (c) => ({
     ...c, rating: { stars, comment: comment.trim(), at: Date.now() },
     timeline: [...c.timeline, { id: uid("t"), at: Date.now(), type: "rating", by: actor(), stars, text: comment.trim() }],
@@ -262,7 +302,7 @@ export function AppProvider({ children }) {
     user, users, complaints, toast, showToast, signedOut,
     notifications: notifications.filter((n) => n.userId === user?.id),
     login, register, logout, updateProfile, changePassword,
-    submitComplaint, setStatus, addMessage, reassign, rate, reopen, withdraw, markNotificationsRead, resetDemo,
+    submitComplaint, setStatus, addMessage, reassign, setUrgency, setDueDate, rate, reopen, withdraw, markNotificationsRead, resetDemo,
   }), [user, users, complaints, notifications, toast, signedOut]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

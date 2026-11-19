@@ -1,12 +1,12 @@
 import React from "react";
-import { slaInfo, timeAgo } from "../../lib/format.js";
+import { slaInfo, timeAgo, currentUrgency } from "../../lib/format.js";
 import { useLang } from "../../lib/i18n.jsx";
 
 export const inScope = (user, complaint) => user.department === "ALL" || complaint.department === user.department;
 export const isOpen = (c) => c.status !== "resolved";
 
 // Highest urgency first, then oldest first (waiting longest).
-export const byPriority = (a, b) => (b.ai.urgencyScore - a.ai.urgencyScore) || (a.createdAt - b.createdAt);
+export const byPriority = (a, b) => (currentUrgency(b).score - currentUrgency(a).score) || (a.createdAt - b.createdAt);
 
 export function studentName(complaint, tr) {
   return complaint.anonymous ? tr("Anonim", "Anonymous") : complaint.student.name;
@@ -15,7 +15,8 @@ export function studentName(complaint, tr) {
 export function SlaTag({ complaint }) {
   const { tr, lang } = useLang();
   if (complaint.status === "resolved") return <span className="sla sla-done">{tr("Selesai", "Done")}</span>;
-  const { due, overdue, responded } = slaInfo(complaint);
+  const { due, overdue, responded, custom } = slaInfo(complaint);
+  if (custom) return <span className={`sla ${overdue ? "sla-late" : "sla-wait"}`}>{overdue ? tr("Lewat tenggat", "Past deadline") : tr("Tenggat", "Deadline")} {timeAgo(due, lang)}</span>;
   if (responded) return <span className="sla sla-ok">{tr("Sudah direspons", "Responded")}</span>;
   return <span className={`sla ${overdue ? "sla-late" : "sla-wait"}`}>{overdue ? tr("Lewat target", "Overdue") : tr("Target", "Due")} {timeAgo(due, lang)}</span>;
 }

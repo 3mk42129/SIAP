@@ -105,6 +105,7 @@ export function AiResult({ ai, current, compact = false }) {
     {!compact && ai.urgencyReasons.length > 0 && <div className="reason-list">{ai.urgencyReasons.map((r) => <span key={r}>{label(REASON_LABELS, r, lang)}</span>)}</div>}
     {ai.safetyOverride && <p className="ai-note ai-note-safety"><Icon name="shield" size={14} />{tr("Terdeteksi kata kunci keamanan — langsung diteruskan ke tim yang tepat dan diprioritaskan.", "Safety keywords detected — sent straight to the right team and prioritised.")}</p>}
     {lowConfidence && <p className="ai-note"><Icon name="info" size={14} />{tr("Keyakinan AI rendah — staf akan memeriksa ulang kategorinya.", "Low AI confidence — staff will double-check the category.")}</p>}
+    {current?.urgency && <p className="ai-note"><Icon name="alert" size={14} />{tr("Urgensi diubah staf menjadi", "Urgency changed by staff to")} <strong>&nbsp;{current.urgency.score}/10</strong></p>}
     {moved && <p className="ai-note"><Icon name="refresh" size={14} />{tr("Dialihkan staf ke", "Reassigned by staff to")} <strong>&nbsp;<DepartmentText department={current.department} /></strong></p>}
   </div>;
 }
@@ -166,7 +167,8 @@ export function Modal({ title, eyebrow, onClose, children, footer, wide = false 
 export function Timeline({ complaint, viewer }) {
   const { tr, lang, locale } = useLang();
   const statusName = (s) => label(STATUS_LABELS, s, lang);
-  const items = complaint.timeline.filter((t) => viewer === "staff" || t.type !== "note");
+  // Notes and urgency changes are internal: students only see the current urgency badge.
+  const items = complaint.timeline.filter((t) => viewer === "staff" || (t.type !== "note" && t.type !== "urgency"));
   const who = (t) => (t.by.role === "student" && complaint.anonymous && viewer === "staff" ? tr("Mahasiswa (anonim)", "Student (anonymous)") : t.by.name);
   return <ol className="timeline">
     {items.map((t) => {
@@ -176,7 +178,11 @@ export function Timeline({ complaint, viewer }) {
       else if (t.type === "reassign") body = <>{tr("mengalihkan dari", "reassigned from")} <b><DepartmentText department={t.from} /></b> {tr("ke", "to")} <b><DepartmentText department={t.to} /></b></>;
       else if (t.type === "rating") body = <>{tr("memberi penilaian", "rated the resolution")} <Stars value={t.stars} size={13} /></>;
       else if (t.type === "reopen") body = tr("membuka kembali keluhan", "reopened the complaint");
-      const isMessage = t.type === "reply" || t.type === "note" || (t.type === "rating" && t.text);
+      else if (t.type === "due") body = t.to
+        ? <>{t.from ? tr("mengubah tenggat penyelesaian menjadi", "moved the deadline to") : tr("menetapkan tenggat penyelesaian", "set the completion deadline to")} <b>{formatDateTime(t.to, locale)}</b></>
+        : tr("menghapus tenggat penyelesaian", "removed the completion deadline");
+      else if (t.type === "urgency") body = <>{tr("mengubah urgensi dari", "changed urgency from")} <b>{t.from}/10</b> {tr("menjadi", "to")} <b>{t.to}/10</b></>;
+      const isMessage = t.type === "reply" || t.type === "note" || ((t.type === "rating" || t.type === "urgency" || t.type === "due") && t.text);
       return <li key={t.id} className={`timeline-item timeline-${t.type} ${t.by.role === "staff" ? "from-staff" : "from-student"}`}>
         <span className="timeline-dot" />
         <div>

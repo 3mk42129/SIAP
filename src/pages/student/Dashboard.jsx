@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import StudentComplaintDialog from "../../components/StudentComplaintDialog.jsx";
 import { Button, CategoryText, DepartmentText, EmptyState, Icon, PageTitle, ProgressTrack, StatusPill, UrgencyBadge } from "../../components/ui.jsx";
-import { formatDate, greeting, timeAgo } from "../../lib/format.js";
+import { formatDate, greeting, timeAgo, currentUrgency } from "../../lib/format.js";
 import { useLang } from "../../lib/i18n.jsx";
 import { useApp } from "../../lib/store.jsx";
 
@@ -39,7 +39,7 @@ export default function StudentDashboard() {
           <span className="eyebrow">{tr("KELUHAN TERBARU", "LATEST COMPLAINT")} · {latest.id}</span>
           <button className="text-button latest-subject" onClick={() => setOpenId(latest.id)}>{latest.subject}</button>
           <p><CategoryText category={latest.category} /> → <DepartmentText department={latest.department} /></p>
-          <div className="inline-pills"><StatusPill status={latest.status} /><UrgencyBadge level={latest.ai.urgencyLevel} score={latest.ai.urgencyScore} /></div>
+          <div className="inline-pills"><StatusPill status={latest.status} /><UrgencyBadge level={currentUrgency(latest).level} score={currentUrgency(latest).score} /></div>
         </div>
         <ProgressTrack complaint={latest} />
       </div> : <EmptyState icon="edit" title={tr("Belum ada keluhan", "No complaints yet")}>{tr("Ceritakan masalahmu — AI akan meneruskannya ke unit yang tepat.", "Tell us what's wrong — the AI will send it to the right team.")}</EmptyState>}

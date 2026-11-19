@@ -38,6 +38,7 @@ export default function StudentComplaintDialog({ complaint, onClose }) {
       <div><small>{tr("Status", "Status")}</small><StatusPill status={complaint.status} /></div>
       <div><small>{tr("Dikirim", "Submitted")}</small><strong>{formatDateTime(complaint.createdAt, locale)}</strong></div>
       <div><small>{tr("Lokasi", "Location")}</small><strong>{complaint.location || "—"}</strong></div>
+      {complaint.dueAt && complaint.status !== "resolved" && <div><small>{tr("Perkiraan selesai", "Expected completion")}</small><strong>{formatDateTime(complaint.dueAt, locale)}</strong></div>}
       <div><small>{tr("Identitas", "Identity")}</small><strong>{complaint.anonymous ? tr("Anonim ke staf", "Anonymous to staff") : tr("Terlihat oleh staf", "Visible to staff")}</strong></div>
     </div>
     <ProgressTrack complaint={complaint} />

@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { AiResult, Button, EmptyState, Icon, PageTitle, Photos, ProgressTrack, StatusPill, Timeline, UrgencyBadge } from "../../components/ui.jsx";
+import { urgencyLevel } from "../../lib/analyzer.js";
 import { DEPARTMENTS } from "../../lib/analyzer.js";
-import { formatDateTime } from "../../lib/format.js";
+import { formatDateTime, currentUrgency, slaInfo, toLocalInput } from "../../lib/format.js";
 import { useLang } from "../../lib/i18n.jsx";
 import { DEPARTMENT_LABELS, label } from "../../lib/labels.js";
 import { useApp } from "../../lib/store.jsx";
@@ -16,13 +17,22 @@ const TEMPLATES = [
 
 export default function StaffComplaint() {
   const { id } = useParams();
-  const { user, complaints, setStatus, addMessage, reassign, showToast } = useApp();
+  const { user, complaints, setStatus, addMessage, reassign, setUrgency, setDueDate, showToast } = useApp();
   const { tr, lang, locale } = useLang();
   const navigate = useNavigate();
   const [message, setMessage] = useState("");
   const [internal, setInternal] = useState(false);
   const complaint = complaints.find((c) => c.id === id);
   const [newDept, setNewDept] = useState(complaint?.department || "");
+  const [urgPick, setUrgPick] = useState(complaint ? currentUrgency(complaint).score : 1);
+  const [urgReason, setUrgReason] = useState("");
+  // Opening another complaint (or a change from another tab) resets the pickers to its current values.
+  const currentScore = complaint ? currentUrgency(complaint).score : 1;
+  useEffect(() => { setUrgPick(currentScore); setUrgReason(""); }, [id, currentScore]);
+  useEffect(() => { if (complaint) setNewDept(complaint.department); }, [id, complaint?.department]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [dueInput, setDueInput] = useState("");
+  const [dueReason, setDueReason] = useState("");
+  useEffect(() => { setDueInput(complaint?.dueAt ? toLocalInput(complaint.dueAt) : ""); setDueReason(""); }, [id, complaint?.dueAt]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const back = <Link to="/staff/queue" className="back-link"><Icon name="back" size={16} />{tr("Kembali ke antrean", "Back to queue")}</Link>;
   if (!complaint || !inScope(user, complaint)) {
@@ -44,11 +54,30 @@ export default function StaffComplaint() {
     if (user.department !== "ALL" && newDept !== user.department) navigate("/staff/queue");
   };
 
+  const urg = currentUrgency(complaint);
+  const sla = slaInfo(complaint);
+  const dueValue = dueInput ? new Date(dueInput).getTime() : null;
+  const dueChanged = dueValue !== (complaint.dueAt || null);
+  const quickDue = (days) => { const d = new Date(Date.now() + days * 86400000); d.setHours(17, 0, 0, 0); setDueInput(toLocalInput(d.getTime())); };
+  const saveDue = () => {
+    if (dueValue && dueValue < Date.now()) { showToast(tr("Tenggat harus di masa depan.", "The deadline must be in the future."), "error"); return; }
+    setDueDate(complaint.id, dueValue, dueReason);
+    showToast(dueValue ? tr("Tenggat disimpan — mahasiswa diberi tahu.", "Deadline saved — the student was notified.") : tr("Tenggat dihapus. Kembali ke target otomatis.", "Deadline removed. Back to the automatic target."));
+  };
+
+  const saveUrgency = () => {
+    if (urgPick === urg.score) return;
+    setUrgency(complaint.id, urgPick, urgReason);
+    setUrgReason("");
+    showToast(tr(`Urgensi diubah menjadi ${urgPick}/10. Antrean diurutkan ulang.`, `Urgency set to ${urgPick}/10. The queue has been re-sorted.`));
+  };
+  const levelName = (score) => ({ High: tr("Tinggi", "High"), Moderate: tr("Sedang", "Moderate"), Minor: tr("Ringan", "Minor") })[urgencyLevel(score)];
+
   const s = complaint.student;
   return <>
     <PageTitle back={back} title={complaint.subject}
       subtitle={<>{complaint.id} · {tr("masuk", "received")} {formatDateTime(complaint.createdAt, locale)}</>}
-      action={<div className="inline-pills"><UrgencyBadge level={complaint.ai.urgencyLevel} score={complaint.ai.urgencyScore} /><StatusPill status={complaint.status} /><SlaTag complaint={complaint} /></div>} />
+      action={<div className="inline-pills"><UrgencyBadge level={currentUrgency(complaint).level} score={currentUrgency(complaint).score} /><StatusPill status={complaint.status} /><SlaTag complaint={complaint} /></div>} />
 
     <div className="staff-detail">
       <div className="staff-main">
@@ -86,6 +115,45 @@ export default function StaffComplaint() {
             {["submitted", "in_review", "resolved"].map((st) => <button key={st} type="button" className={complaint.status === st ? "active" : ""} aria-pressed={complaint.status === st} onClick={() => { if (complaint.status !== st) { setStatus(complaint.id, st); showToast(tr("Status diperbarui — mahasiswa diberi tahu.", "Status updated — the student was notified.")); } }}>
               {{ submitted: tr("Terkirim", "Submitted"), in_review: tr("Diproses", "In review"), resolved: tr("Selesai", "Resolved") }[st]}</button>)}
           </div>
+        </section>
+
+        <section className="panel side-panel">
+          <h3><Icon name="clock" size={16} />{tr("Tenggat penyelesaian", "Completion deadline")}</h3>
+          <p className="side-hint">{complaint.dueAt
+            ? <>{tr("Ditetapkan staf:", "Set by staff:")} <b>{formatDateTime(complaint.dueAt, locale)}</b>{sla.overdue && <span className="flag"> · {tr("lewat tenggat", "past deadline")}</span>}</>
+            : <>{tr("Otomatis: respons pertama paling lambat", "Automatic: first response by")} <b>{formatDateTime(sla.due, locale)}</b> ({tr("berdasarkan urgensi", "based on urgency")}).</>}</p>
+          <input type="datetime-local" className="side-input" value={dueInput} min={toLocalInput(Date.now())} onChange={(e) => setDueInput(e.target.value)} aria-label={tr("Tenggat penyelesaian", "Completion deadline")} />
+          <div className="quick-due">
+            {[[1, tr("Besok", "Tomorrow")], [3, tr("+3 hari", "+3 days")], [7, tr("+1 minggu", "+1 week")]].map(([d, text]) => <button key={d} type="button" className="chip" onClick={() => quickDue(d)}>{text}</button>)}
+            {complaint.dueAt && <button type="button" className="chip chip-danger" onClick={() => setDueInput("")}>{tr("Hapus tenggat", "Clear")}</button>}
+          </div>
+          {dueChanged && <>
+            {dueValue && <input className="side-input" value={dueReason} onChange={(e) => setDueReason(e.target.value)} maxLength={200} placeholder={tr("Keterangan untuk mahasiswa (opsional)", "Note for the student (optional)")} />}
+            <div className="urgency-actions">
+              <Button variant="secondary" onClick={() => setDueInput(complaint.dueAt ? toLocalInput(complaint.dueAt) : "")}>{tr("Batal", "Cancel")}</Button>
+              <Button icon="tick" onClick={saveDue}>{dueValue ? tr("Simpan tenggat", "Save deadline") : tr("Hapus tenggat", "Remove deadline")}</Button>
+            </div>
+          </>}
+        </section>
+
+        <section className="panel side-panel">
+          <h3><Icon name="alert" size={16} />{tr("Urgensi", "Urgency")}</h3>
+          <p className="side-hint">{urg.changed
+            ? <>{tr("Diubah staf dari", "Changed by staff from")} <b>{urg.ai}/10</b> ({tr("skor AI", "AI score")}).</>
+            : tr("Skor dari AI. Ubah jika menurut Anda kurang tepat.", "Score from the AI. Change it if it doesn't look right.")}</p>
+          <div className="urgency-picker" role="radiogroup" aria-label={tr("Skor urgensi", "Urgency score")}>
+            {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => <button key={n} type="button" role="radio" aria-checked={urgPick === n}
+              className={`lvl-${urgencyLevel(n).toLowerCase()} ${urgPick === n ? "picked" : ""} ${n === urg.ai ? "is-ai" : ""}`}
+              title={`${n}/10 · ${levelName(n)}${n === urg.ai ? ` · ${tr("skor AI", "AI score")}` : ""}`} onClick={() => setUrgPick(n)}>{n}</button>)}
+          </div>
+          <div className="urgency-legend"><span>1–3 {tr("Ringan", "Minor")}</span><span>4–7 {tr("Sedang", "Moderate")}</span><span>8–10 {tr("Tinggi", "High")}</span></div>
+          {urgPick !== urg.score && <>
+            <input className="side-input" value={urgReason} onChange={(e) => setUrgReason(e.target.value)} maxLength={200} placeholder={tr("Alasan (opsional), cth. menyangkut keselamatan", "Reason (optional), e.g. safety risk")} />
+            <div className="urgency-actions">
+              <Button variant="secondary" onClick={() => { setUrgPick(urg.score); setUrgReason(""); }}>{tr("Batal", "Cancel")}</Button>
+              <Button icon="tick" onClick={saveUrgency}>{tr(`Simpan ${urgPick}/10`, `Save ${urgPick}/10`)}</Button>
+            </div>
+          </>}
         </section>
 
         <section className="panel side-panel">

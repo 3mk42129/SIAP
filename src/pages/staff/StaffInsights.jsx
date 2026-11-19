@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button, CategoryText, Icon, PageTitle } from "../../components/ui.jsx";
 import { LOW_CONFIDENCE } from "../../config.js";
-import { downloadCsv, formatDate } from "../../lib/format.js";
+import { downloadCsv, formatDate, currentUrgency } from "../../lib/format.js";
 import { useLang } from "../../lib/i18n.jsx";
 import { CATEGORY_LABELS, DEPARTMENT_LABELS, URGENCY_LABELS, label } from "../../lib/labels.js";
 import { useApp } from "../../lib/store.jsx";
@@ -17,12 +17,12 @@ export default function StaffInsights() {
   const since = range === "all" ? 0 : Date.now() - Number(range) * 86400000;
   const scoped = complaints.filter((c) => inScope(user, c) && c.createdAt >= since);
   // AI corrections are judged across all complaints the staff member can see, even after a reassign moved them away
-  const corrections = complaints.filter((c) => c.createdAt >= since && c.department !== c.ai.department && (user.department === "ALL" || c.ai.department === user.department || c.department === user.department));
+  const corrections = complaints.filter((c) => c.createdAt >= since && (c.department !== c.ai.department || c.urgency) && (user.department === "ALL" || c.ai.department === user.department || c.department === user.department));
   const total = scoped.length;
 
   const byCategory = Object.entries(countBy(scoped, (c) => c.category)).sort((a, b) => b[1] - a[1]).map(([k, v]) => ({ key: k, label: label(CATEGORY_LABELS, k, lang), value: v }));
   const byDept = Object.entries(countBy(scoped, (c) => c.department)).sort((a, b) => b[1] - a[1]).map(([k, v]) => ({ key: k, label: label(DEPARTMENT_LABELS, k, lang), value: v }));
-  const urg = countBy(scoped, (c) => c.ai.urgencyLevel);
+  const urg = countBy(scoped, (c) => currentUrgency(c).level);
   const byUrgency = ["High", "Moderate", "Minor"].map((k) => ({ key: k, label: label(URGENCY_LABELS, k, lang), value: urg[k] || 0, tone: { High: "red", Moderate: "amber", Minor: "green" }[k] }));
   const lang2 = countBy(scoped, (c) => c.language);
 
@@ -36,8 +36,8 @@ export default function StaffInsights() {
   const fmtHours = (h) => (h >= 48 ? `${(h / 24).toFixed(1)} ${tr("hari", "days")}` : `${h.toFixed(1)} ${tr("jam", "hrs")}`);
 
   const exportCorrections = () => downloadCsv("siap-koreksi-ai.csv", [
-    ["Reports", "Genre", "AI_Genre", "Language", "Complaint_ID", "Date"],
-    ...corrections.map((c) => [`${c.subject}. ${c.details}`, c.category, c.ai.category, c.language, c.id, new Date(c.createdAt).toISOString()]),
+    ["Reports", "Genre", "AI_Genre", "Urgency", "AI_Urgency", "Language", "Complaint_ID", "Date"],
+    ...corrections.map((c) => [`${c.subject}. ${c.details}`, c.category, c.ai.category, currentUrgency(c).score, c.ai.urgencyScore, c.language, c.id, new Date(c.createdAt).toISOString()]),
   ]);
 
   return <>
@@ -61,14 +61,15 @@ export default function StaffInsights() {
         <div className="section-title-row"><h2><Icon name="sparkle" size={17} /> {tr("Kinerja AI", "AI performance")}</h2><Button variant="secondary" icon="download" onClick={exportCorrections} disabled={!corrections.length}>{tr("Unduh koreksi (CSV)", "Download corrections (CSV)")}</Button></div>
         <div className="ai-kpis">
           <div><strong>{total ? `${aiKept}%` : "–"}</strong><small>{tr("rute AI tidak diubah staf", "AI routes kept by staff")}</small></div>
-          <div><strong>{corrections.length}</strong><small>{tr("koreksi oleh staf", "staff corrections")}</small></div>
+          <div><strong>{corrections.filter((c) => c.department !== c.ai.department).length}</strong><small>{tr("kategori dikoreksi staf", "categories corrected")}</small></div>
+          <div><strong>{corrections.filter((c) => c.urgency).length}</strong><small>{tr("urgensi diubah staf", "urgency changed by staff")}</small></div>
           <div><strong>{lowConf}</strong><small>{tr("keyakinan rendah", "low-confidence results")}</small></div>
           <div><strong>{scoped.filter((c) => c.ai.safetyOverride).length}</strong><small>{tr("aturan keamanan aktif", "safety rule triggered")}</small></div>
         </div>
-        <p className="side-hint">{tr("Setiap kali staf mengalihkan keluhan, teks dan kategori yang benar disimpan. File CSV-nya memakai kolom yang sama dengan dataset (Reports, Genre) sehingga bisa langsung ditambahkan ke notebook untuk melatih ulang model.", "Whenever staff reassign a complaint, the text and the correct category are saved. The CSV uses the same columns as the dataset (Reports, Genre), so it can go straight into the notebook to retrain the model.")}</p>
+        <p className="side-hint">{tr("Setiap kali staf mengalihkan keluhan atau mengubah urgensinya, nilai yang benar disimpan di samping tebakan AI. File CSV-nya memakai kolom yang sama dengan dataset (Reports, Genre) plus kolom Urgency, sehingga bisa langsung dipakai di notebook untuk melatih ulang model.", "Whenever staff reassign a complaint or change its urgency, the correct value is saved next to the AI's guess. The CSV uses the dataset's columns (Reports, Genre) plus an Urgency column, so it can go straight into the notebook for retraining.")}</p>
         {corrections.length > 0 && <div className="table-wrap"><table className="complaint-table compact-table">
-          <thead><tr><th>{tr("KELUHAN", "COMPLAINT")}</th><th>{tr("TEBAKAN AI", "AI GUESS")}</th><th>{tr("KOREKSI STAF", "STAFF CORRECTION")}</th><th>{tr("TANGGAL", "DATE")}</th></tr></thead>
-          <tbody>{corrections.map((c) => <tr key={c.id}><td><Link to={`/staff/complaints/${c.id}`}><strong>{c.subject}</strong></Link><small>{c.id}</small></td><td className="strike"><CategoryText category={c.ai.category} /></td><td><CategoryText category={c.category} /></td><td>{formatDate(c.createdAt, locale)}</td></tr>)}</tbody>
+          <thead><tr><th>{tr("KELUHAN", "COMPLAINT")}</th><th>{tr("TEBAKAN AI", "AI GUESS")}</th><th>{tr("KOREKSI STAF", "STAFF CORRECTION")}</th><th>{tr("URGENSI AI → STAF", "URGENCY AI → STAFF")}</th><th>{tr("TANGGAL", "DATE")}</th></tr></thead>
+          <tbody>{corrections.map((c) => <tr key={c.id}><td><Link to={`/staff/complaints/${c.id}`}><strong>{c.subject}</strong></Link><small>{c.id}</small></td><td className={c.department !== c.ai.department ? "strike" : ""}><CategoryText category={c.ai.category} /></td><td>{c.department !== c.ai.department ? <CategoryText category={c.category} /> : "—"}</td><td className="nowrap">{c.urgency ? `${c.ai.urgencyScore} → ${c.urgency.score}` : "—"}</td><td>{formatDate(c.createdAt, locale)}</td></tr>)}</tbody>
         </table></div>}
       </section>
     </div>

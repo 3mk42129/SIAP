@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, CategoryText, DepartmentText, EmptyState, Icon, PageTitle, StatusPill, UrgencyBadge } from "../../components/ui.jsx";
-import { formatDate, greeting, slaInfo, timeAgo } from "../../lib/format.js";
+import { formatDate, greeting, slaInfo, timeAgo, currentUrgency } from "../../lib/format.js";
 import { useLang } from "../../lib/i18n.jsx";
 import { useApp } from "../../lib/store.jsx";
 import { byPriority, inScope, isOpen, SlaTag, studentName } from "./shared.jsx";
@@ -16,7 +16,7 @@ export default function StaffDashboard() {
   const navigate = useNavigate();
   const scoped = complaints.filter((c) => inScope(user, c));
   const open = scoped.filter(isOpen);
-  const high = open.filter((c) => c.ai.urgencyLevel === "High");
+  const high = open.filter((c) => currentUrgency(c).level === "High");
   const overdue = open.filter((c) => slaInfo(c).overdue);
   const rated = scoped.filter((c) => c.rating);
   const avgRating = rated.length ? (rated.reduce((s, c) => s + c.rating.stars, 0) / rated.length).toFixed(1) : "–";
@@ -45,7 +45,7 @@ export default function StaffDashboard() {
         <div className="section-title-row"><h2>{tr("Prioritas sekarang", "Priority now")}</h2><button className="link-button" onClick={() => navigate("/staff/queue")}>{tr("Semua", "All")} <Icon name="arrow" size={14} /></button></div>
         {queue.length === 0 && <EmptyState icon="check" title={tr("Antrean kosong", "Queue is clear")}>{tr("Tidak ada keluhan terbuka.", "No open complaints.")}</EmptyState>}
         {queue.map((c) => <button key={c.id} className="queue-row" onClick={() => go(c.id)}>
-          <UrgencyBadge level={c.ai.urgencyLevel} score={c.ai.urgencyScore} compact />
+          <UrgencyBadge level={currentUrgency(c).level} score={currentUrgency(c).score} compact />
           <span className="recent-info"><strong>{c.subject}</strong><small>{c.id} · <CategoryText category={c.category} /> · {studentName(c, tr)}</small></span>
           <span className="queue-row-end"><StatusPill status={c.status} /><SlaTag complaint={c} /></span>
         </button>)}
@@ -55,7 +55,7 @@ export default function StaffDashboard() {
         <ul className="activity-list">
           {activity.map((t) => <li key={t.id}><button className="text-button" onClick={() => go(t.complaint.id)}>
             <strong>{t.type === "created" ? studentName(t.complaint, tr) : t.by.name}</strong>{" "}
-            {{ created: tr("mengirim", "submitted"), status: tr("memperbarui status", "updated status of"), reply: tr("membalas", "replied to"), note: tr("mencatat di", "noted on"), reassign: tr("mengalihkan", "reassigned"), rating: tr("menilai", "rated"), reopen: tr("membuka ulang", "reopened") }[t.type]}{" "}
+            {{ created: tr("mengirim", "submitted"), status: tr("memperbarui status", "updated status of"), reply: tr("membalas", "replied to"), note: tr("mencatat di", "noted on"), reassign: tr("mengalihkan", "reassigned"), rating: tr("menilai", "rated"), reopen: tr("membuka ulang", "reopened"), urgency: tr("mengubah urgensi", "changed urgency of"), due: tr("mengatur tenggat", "set the deadline of") }[t.type]}{" "}
             <span className="activity-subject">{t.complaint.subject}</span><small>{timeAgo(t.at, lang)}</small>
           </button></li>)}
         </ul>

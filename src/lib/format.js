@@ -1,4 +1,12 @@
 import { SLA_HOURS } from "../config.js";
+import { urgencyLevel } from "./analyzer.js";
+
+// The urgency that counts right now: staff's score if they changed it, otherwise the AI's.
+export function currentUrgency(complaint) {
+  const override = complaint.urgency;
+  if (override) return { score: override.score, level: urgencyLevel(override.score), changed: true, ai: complaint.ai.urgencyScore };
+  return { score: complaint.ai.urgencyScore, level: complaint.ai.urgencyLevel, changed: false, ai: complaint.ai.urgencyScore };
+}
 
 export const formatDate = (ts, locale) => new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", year: "numeric" }).format(ts);
 export const formatDateTime = (ts, locale) => new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(ts);
@@ -17,11 +25,22 @@ export function timeAgo(ts, lang) {
   return rtf.format(Math.round(diff / 31557600), "year");
 }
 
-// When the first response is due, based on urgency.
+// Deadline for a complaint.
+// - Staff set a deadline (dueAt): the complaint must be resolved by then.
+// - Otherwise: automatic first-response target based on urgency.
 export function slaInfo(complaint) {
-  const due = complaint.createdAt + SLA_HOURS[complaint.ai.urgencyLevel] * 3600000;
   const responded = complaint.firstResponseAt || (complaint.status !== "submitted" ? complaint.updatedAt : null);
-  return { due, overdue: !responded && Date.now() > due, responded };
+  if (complaint.dueAt) {
+    return { due: complaint.dueAt, custom: true, responded, overdue: complaint.status !== "resolved" && Date.now() > complaint.dueAt };
+  }
+  const due = complaint.createdAt + SLA_HOURS[currentUrgency(complaint).level] * 3600000;
+  return { due, custom: false, responded, overdue: !responded && Date.now() > due };
+}
+
+// Value for <input type="datetime-local"> in the viewer's own time zone.
+export function toLocalInput(ts) {
+  const d = new Date(ts - new Date(ts).getTimezoneOffset() * 60000);
+  return d.toISOString().slice(0, 16);
 }
 
 // Indonesian academic semesters: Odd (Ganjil) Sep–Feb, Even (Genap) Feb–Aug.

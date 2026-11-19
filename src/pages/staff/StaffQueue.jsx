@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button, CategoryText, DepartmentText, Icon, PageTitle, StatusPill, UrgencyBadge } from "../../components/ui.jsx";
 import { LOW_CONFIDENCE } from "../../config.js";
 import { DEPARTMENTS } from "../../lib/analyzer.js";
-import { downloadCsv, formatDateTime, slaInfo, timeAgo } from "../../lib/format.js";
+import { downloadCsv, formatDateTime, slaInfo, timeAgo, currentUrgency } from "../../lib/format.js";
 import { useLang } from "../../lib/i18n.jsx";
 import { CATEGORY_LABELS, DEPARTMENT_LABELS, STATUS_LABELS, label } from "../../lib/labels.js";
 import { useApp } from "../../lib/store.jsx";
@@ -25,7 +25,7 @@ export default function StaffQueue() {
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
     const list = scoped.filter((c) => (status === "all" || (status === "open" ? c.status !== "resolved" : status === "overdue" ? slaInfo(c).overdue : status === "check" ? (!c.ai.safetyOverride && c.ai.confidence < LOW_CONFIDENCE) : c.status === status))
-      && (urgency === "all" || c.ai.urgencyLevel === urgency)
+      && (urgency === "all" || currentUrgency(c).level === urgency)
       && (dept === "all" || c.department === dept)
       && (!q || `${c.id} ${c.subject} ${c.details} ${c.anonymous ? "" : c.student.name}`.toLowerCase().includes(q)));
     const sorters = { priority: byPriority, newest: (a, b) => b.createdAt - a.createdAt, oldest: (a, b) => a.createdAt - b.createdAt };
@@ -34,7 +34,7 @@ export default function StaffQueue() {
 
   const exportCsv = () => downloadCsv("siap-antrean.csv", [
     ["Reference", "Title", "Details", "Category", "Department", "Urgency", "Level", "Status", "Submitted", "Student", "Language"],
-    ...rows.map((c) => [c.id, c.subject, c.details, label(CATEGORY_LABELS, c.category, lang), label(DEPARTMENT_LABELS, c.department, lang), c.ai.urgencyScore, c.ai.urgencyLevel, label(STATUS_LABELS, c.status, lang), formatDateTime(c.createdAt, locale), studentName(c, tr), c.language]),
+    ...rows.map((c) => [c.id, c.subject, c.details, label(CATEGORY_LABELS, c.category, lang), label(DEPARTMENT_LABELS, c.department, lang), currentUrgency(c).score, currentUrgency(c).level, label(STATUS_LABELS, c.status, lang), formatDateTime(c.createdAt, locale), studentName(c, tr), c.language]),
   ]);
 
   const statusTabs = [["open", tr("Terbuka", "Open")], ["submitted", tr("Baru", "New")], ["in_review", tr("Diproses", "In review")], ["overdue", tr("Lewat target", "Overdue")], ["check", tr("Perlu cek AI", "Check AI")], ["resolved", tr("Selesai", "Resolved")], ["all", tr("Semua", "All")]];
@@ -56,8 +56,8 @@ export default function StaffQueue() {
         <table className="complaint-table">
           <thead><tr><th>{tr("URGENSI", "URGENCY")}</th><th>{tr("KELUHAN", "COMPLAINT")}</th><th>{tr("KATEGORI", "CATEGORY")}</th>{user.department === "ALL" && <th>{tr("UNIT", "DEPARTMENT")}</th>}<th>{tr("PELAPOR", "FROM")}</th><th>{tr("MASUK", "RECEIVED")}</th><th>STATUS</th><th>{tr("TARGET", "TARGET")}</th></tr></thead>
           <tbody>
-            {rows.map((c) => <tr key={c.id} tabIndex={0} onClick={() => go(c.id)} onKeyDown={(e) => { if (e.key === "Enter") go(c.id); }} className={c.ai.urgencyLevel === "High" && c.status !== "resolved" ? "row-high" : ""}>
-              <td><UrgencyBadge level={c.ai.urgencyLevel} score={c.ai.urgencyScore} compact /></td>
+            {rows.map((c) => <tr key={c.id} tabIndex={0} onClick={() => go(c.id)} onKeyDown={(e) => { if (e.key === "Enter") go(c.id); }} className={currentUrgency(c).level === "High" && c.status !== "resolved" ? "row-high" : ""}>
+              <td><UrgencyBadge level={currentUrgency(c).level} score={currentUrgency(c).score} compact /></td>
               <td><strong>{c.subject}</strong><small>{c.id}{c.ai.safetyOverride && <> · <span className="flag">{tr("keamanan", "safety")}</span></>}{!c.ai.safetyOverride && c.ai.confidence < LOW_CONFIDENCE && <> · <span className="flag flag-soft">{tr("cek kategori", "check category")}</span></>}</small></td>
               <td><CategoryText category={c.category} /></td>
               {user.department === "ALL" && <td><DepartmentText department={c.department} /></td>}
@@ -71,8 +71,8 @@ export default function StaffQueue() {
         </table>
       </div>
       <div className="card-list">
-        {rows.map((c) => <button key={c.id} className={`complaint-card ${c.ai.urgencyLevel === "High" && c.status !== "resolved" ? "card-high" : ""}`} onClick={() => go(c.id)}>
-          <span className="complaint-card-top"><UrgencyBadge level={c.ai.urgencyLevel} score={c.ai.urgencyScore} /><StatusPill status={c.status} /></span>
+        {rows.map((c) => <button key={c.id} className={`complaint-card ${currentUrgency(c).level === "High" && c.status !== "resolved" ? "card-high" : ""}`} onClick={() => go(c.id)}>
+          <span className="complaint-card-top"><UrgencyBadge level={currentUrgency(c).level} score={currentUrgency(c).score} /><StatusPill status={c.status} /></span>
           <strong>{c.subject}</strong>
           <span className="complaint-card-meta"><small>{c.id} · {studentName(c, tr)}</small><SlaTag complaint={c} /></span>
         </button>)}
