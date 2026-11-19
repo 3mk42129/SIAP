@@ -1,8 +1,11 @@
 // App-wide settings. Change these instead of editing the pages.
 
-// Only emails ending in one of these domains can sign in or register.
-// (Binus staff sometimes use @binus.edu — add it here if staff need to sign in with it.)
-export const ALLOWED_DOMAINS = ["binus.ac.id"];
+// Email domains per role. Students can only use STUDENT_DOMAINS, staff only STAFF_DOMAINS,
+// so a student email can never open the staff portal (and the other way round).
+export const STUDENT_DOMAINS = ["binus.ac.id"];
+export const STAFF_DOMAINS = ["binus.ac.staff"];
+export const domainsFor = (role) => (role === "staff" ? STAFF_DOMAINS : STUDENT_DOMAINS);
+export const domainHint = (role) => domainsFor(role).map((d) => `@${d}`).join(" / ");
 
 // Code a new staff member must enter when registering a staff account.
 export const STAFF_ACCESS_CODE = "SIAP-STAFF-2026";

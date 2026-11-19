@@ -18,7 +18,7 @@ export default function AuthLayout({ children }) {
         <h1>{tr("Suaramu sampai ke orang yang tepat.", "Your voice reaches the right people.")}</h1>
         <ul>{points.map(([icon, text]) => <li key={text}><span><Icon name={icon} size={17} /></span>{text}</li>)}</ul>
       </div>
-      <p className="auth-hero-foot">{tr("Khusus civitas BINUS University · login dengan email @binus.ac.id", "For BINUS University only · sign in with your @binus.ac.id email")}</p>
+      <p className="auth-hero-foot">{tr("Khusus civitas BINUS · mahasiswa @binus.ac.id · staf @binus.ac.staff", "BINUS only · students @binus.ac.id · staff @binus.ac.staff")}</p>
     </section>
     <section className="auth-panel">
       <div className="auth-top"><span className="auth-mobile-logo"><Logo /></span><LangSwitch /></div>

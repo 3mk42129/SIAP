@@ -84,7 +84,7 @@ export const SEED_USERS = [
   },
   "role": "staff",
   "name": "Admin SIAP",
-  "email": "admin.siap@binus.ac.id",
+  "email": "admin.siap@binus.ac.staff",
   "staffId": "D0001",
   "department": "ALL",
   "position": "Complaint Coordinator"
@@ -100,7 +100,7 @@ export const SEED_USERS = [
   },
   "role": "staff",
   "name": "Rina Kartika",
-  "email": "rina.kartika@binus.ac.id",
+  "email": "rina.kartika@binus.ac.staff",
   "staffId": "D1024",
   "department": "Student Affairs Office",
   "position": "Student Affairs Officer"
@@ -116,7 +116,7 @@ export const SEED_USERS = [
   },
   "role": "staff",
   "name": "Andi Pratama",
-  "email": "andi.pratama@binus.ac.id",
+  "email": "andi.pratama@binus.ac.staff",
   "staffId": "D2048",
   "department": "IT / Learning Management Support",
   "position": "LMS Support Engineer"

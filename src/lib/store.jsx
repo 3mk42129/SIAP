@@ -9,7 +9,7 @@ import { SEED_COMPLAINTS, SEED_USERS } from "./seedData.js";
 // so a complaint sent in one tab shows up for staff in another tab of the same browser.
 // For real multi-device use, swap these reads/writes for a database (e.g. Supabase).
 const KEYS = { users: "siap.users", session: "siap.session", complaints: "siap.complaints", notifications: "siap.notifications", counter: "siap.counter", version: "siap.dataVersion" };
-const DATA_VERSION = 2;
+const DATA_VERSION = 3;
 
 const CATEGORY_BY_DEPARTMENT = Object.fromEntries(Object.entries(DEPARTMENTS).map(([cat, dept]) => [dept, cat]));
 const DAY = 86400000;
@@ -135,7 +135,7 @@ export function AppProvider({ children }) {
 
   const login = async (email, password, role) => {
     const clean = normalizeEmail(email);
-    if (!isAllowedEmail(clean)) return { error: "domain" };
+    if (!isAllowedEmail(clean, role)) return { error: "domain" };
     const found = live.current.users.find((u) => u.email === clean);
     if (!found || (await hashPassword(found.salt, password)) !== found.passwordHash) return { error: "credentials" };
     if (role && found.role !== role) return { error: "role" };
@@ -147,7 +147,7 @@ export function AppProvider({ children }) {
 
   const register = async (data) => {
     const email = normalizeEmail(data.email);
-    if (!isAllowedEmail(email)) return { error: "domain" };
+    if (!isAllowedEmail(email, data.role)) return { error: "domain" };
     if (live.current.users.some((u) => u.email === email)) return { error: "exists" };
     if (data.role === "student" && !isValidNim(data.nim)) return { error: "nim" };
     if (data.role === "staff" && data.accessCode !== STAFF_ACCESS_CODE) return { error: "code" };

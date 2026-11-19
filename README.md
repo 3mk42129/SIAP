@@ -17,9 +17,9 @@ Deploy on Vercel as before (`vercel.json` is included). No server is needed beca
 | Role | Email |
 |---|---|
 | Student | nadia.putri@binus.ac.id |
-| Student Affairs staff | rina.kartika@binus.ac.id |
-| IT / LMS staff | andi.pratama@binus.ac.id |
-| Admin (all departments) | admin.siap@binus.ac.id |
+| Student Affairs staff | rina.kartika@binus.ac.staff |
+| IT / LMS staff | andi.pratama@binus.ac.staff |
+| Admin (all departments) | admin.siap@binus.ac.staff |
 
 Staff self-registration needs the access code in `src/config.js` (`SIAP-STAFF-2026`). Set `DEMO_MODE = false` there to hide the demo buttons.
 

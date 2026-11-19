@@ -11,9 +11,9 @@ const users = [
   user("u-student-2", { role: "student", name: "Budi Santoso", email: "budi.santoso@binus.ac.id", nim: "2702111222", major: "Information Systems", faculty: "School of Information Systems", campus: "Alam Sutera", batch: "2022" }),
   user("u-student-3", { role: "student", name: "Sarah Lim", email: "sarah.lim@binus.ac.id", nim: "2702333444", major: "International Business", faculty: "BINUS Business School", campus: "Senayan", batch: "2024" }),
   user("u-student-4", { role: "student", name: "Kevin Wijaya", email: "kevin.wijaya@binus.ac.id", nim: "2702555666", major: "Accounting", faculty: "School of Accounting", campus: "Kemanggisan", batch: "2023" }),
-  user("u-admin", { role: "staff", name: "Admin SIAP", email: "admin.siap@binus.ac.id", staffId: "D0001", department: "ALL", position: "Complaint Coordinator" }),
-  user("u-staff-sa", { role: "staff", name: "Rina Kartika", email: "rina.kartika@binus.ac.id", staffId: "D1024", department: "Student Affairs Office", position: "Student Affairs Officer" }),
-  user("u-staff-it", { role: "staff", name: "Andi Pratama", email: "andi.pratama@binus.ac.id", staffId: "D2048", department: "IT / Learning Management Support", position: "LMS Support Engineer" }),
+  user("u-admin", { role: "staff", name: "Admin SIAP", email: "admin.siap@binus.ac.staff", staffId: "D0001", department: "ALL", position: "Complaint Coordinator" }),
+  user("u-staff-sa", { role: "staff", name: "Rina Kartika", email: "rina.kartika@binus.ac.staff", staffId: "D1024", department: "Student Affairs Office", position: "Student Affairs Officer" }),
+  user("u-staff-it", { role: "staff", name: "Andi Pratama", email: "andi.pratama@binus.ac.staff", staffId: "D2048", department: "IT / Learning Management Support", position: "LMS Support Engineer" }),
 ];
 // [student, anonymous, subject, details, location, daysAgo, status, extra]
 const C = [

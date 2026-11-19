@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button, Icon } from "../../components/ui.jsx";
-import { ALLOWED_DOMAINS, CAMPUSES } from "../../config.js";
+import { CAMPUSES, domainHint as hintFor } from "../../config.js";
 import { DEPARTMENTS } from "../../lib/analyzer.js";
 import { isAllowedEmail, isValidNim, passwordProblem } from "../../lib/auth.js";
 import { useLang } from "../../lib/i18n.jsx";
@@ -24,11 +24,11 @@ export default function Register() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const set = (key) => (event) => setForm({ ...form, [key]: event.target.value });
-  const domainHint = ALLOWED_DOMAINS.map((d) => `@${d}`).join(" / ");
+  const domainHint = hintFor(role);
 
   const problems = {
     name: form.name.trim().length < 3 && tr("Isi nama lengkap.", "Enter your full name."),
-    email: !isAllowedEmail(form.email) && tr(`Harus email ${domainHint}.`, `Must be a ${domainHint} email.`),
+    email: !isAllowedEmail(form.email, role) && tr(`Harus email ${domainHint}.`, `Must be a ${domainHint} email.`),
     nim: role === "student" && !isValidNim(form.nim) && tr("NIM terdiri dari 10 angka.", "Student ID (NIM) is 10 digits."),
     major: role === "student" && !form.major.trim() && tr("Isi jurusan.", "Enter your major."),
     accessCode: role === "staff" && !form.accessCode.trim() && tr("Masukkan kode akses staf dari koordinator SIAP.", "Enter the staff access code from the SIAP coordinator."),
@@ -65,7 +65,7 @@ export default function Register() {
     </div>
     <form onSubmit={submit} noValidate>
       <label className="field">{tr("Nama lengkap", "Full name")}<input value={form.name} onChange={set("name")} autoComplete="name" />{show("name")}</label>
-      <label className="field">{tr("Email BINUS", "BINUS email")}<input type="email" value={form.email} onChange={set("email")} autoComplete="email" placeholder="nama@binus.ac.id" />{show("email")}</label>
+      <label className="field">{role === "staff" ? tr("Email staf BINUS", "BINUS staff email") : tr("Email mahasiswa BINUS", "BINUS student email")}<input type="email" value={form.email} onChange={set("email")} autoComplete="email" placeholder={`nama${domainHint}`} />{show("email")}</label>
       {role === "student" ? <>
         <div className="field-row">
           <label className="field">NIM<input value={form.nim} onChange={set("nim")} inputMode="numeric" maxLength={10} placeholder="27xxxxxxxx" />{show("nim")}</label>

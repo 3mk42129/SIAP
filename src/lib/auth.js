@@ -1,14 +1,14 @@
-import { ALLOWED_DOMAINS } from "../config.js";
+import { domainsFor } from "../config.js";
 
 export function normalizeEmail(email) {
   return String(email || "").trim().toLowerCase();
 }
 
-// Accepts name@binus.ac.id only (exact domain, no subdomains, no look-alikes such as binus.ac.id.evil.com).
-export function isAllowedEmail(email) {
+// Exact domain match for the given role (no subdomains, no look-alikes such as binus.ac.id.evil.com).
+export function isAllowedEmail(email, role = "student") {
   const value = normalizeEmail(email);
   const match = value.match(/^[a-z0-9._%+-]+@([a-z0-9.-]+)$/);
-  return Boolean(match) && ALLOWED_DOMAINS.includes(match[1]);
+  return Boolean(match) && domainsFor(role).includes(match[1]);
 }
 
 export const isValidNim = (nim) => /^\d{10}$/.test(String(nim || "").trim());

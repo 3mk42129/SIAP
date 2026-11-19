@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button, Icon } from "../../components/ui.jsx";
-import { ALLOWED_DOMAINS, DEMO_MODE } from "../../config.js";
+import { DEMO_MODE, domainHint as hintFor } from "../../config.js";
 import { isAllowedEmail } from "../../lib/auth.js";
 import { useLang } from "../../lib/i18n.jsx";
 import { useApp } from "../../lib/store.jsx";
@@ -10,9 +10,9 @@ import AuthLayout from "./AuthLayout.jsx";
 const DEMO_ACCOUNTS = [
   { role: "student", email: "nadia.putri@binus.ac.id", id: "Mahasiswa · Nadia", en: "Student · Nadia" },
   { role: "student", email: "budi.santoso@binus.ac.id", id: "Mahasiswa · Budi", en: "Student · Budi" },
-  { role: "staff", email: "rina.kartika@binus.ac.id", id: "Staf Kemahasiswaan", en: "Student Affairs staff" },
-  { role: "staff", email: "andi.pratama@binus.ac.id", id: "Staf IT / LMS", en: "IT / LMS staff" },
-  { role: "staff", email: "admin.siap@binus.ac.id", id: "Admin (semua unit)", en: "Admin (all departments)" },
+  { role: "staff", email: "rina.kartika@binus.ac.staff", id: "Staf Kemahasiswaan", en: "Student Affairs staff" },
+  { role: "staff", email: "andi.pratama@binus.ac.staff", id: "Staf IT / LMS", en: "IT / LMS staff" },
+  { role: "staff", email: "admin.siap@binus.ac.staff", id: "Admin (semua unit)", en: "Admin (all departments)" },
 ];
 
 export default function Login() {
@@ -27,13 +27,18 @@ export default function Login() {
   const [busy, setBusy] = useState(false);
   const [role, setRole] = useState(() => (location.state?.from?.startsWith("/staff") ? "staff" : "student"));
   const pickRole = (next) => { setRole(next); setError(""); setEmail(""); setPassword(""); };
-  const domainHint = ALLOWED_DOMAINS.map((d) => `@${d}`).join(" / ");
-  const emailBad = email.includes("@") && email.split("@")[1]?.length > 3 && !isAllowedEmail(email);
+  const domainHint = hintFor(role);
+  const emailBad = email.includes("@") && email.split("@")[1]?.length > 3 && !isAllowedEmail(email, role);
 
   const submit = async (event) => {
     event.preventDefault();
     setError("");
-    if (!isAllowedEmail(email)) { setError(tr(`Gunakan email kampus ${domainHint}.`, `Use your campus email (${domainHint}).`)); return; }
+    if (!isAllowedEmail(email, role)) {
+      setError(role === "staff"
+        ? tr(`Portal staf hanya untuk email ${domainHint}.`, `The staff portal only accepts ${domainHint} emails.`)
+        : tr(`Gunakan email mahasiswa ${domainHint}.`, `Use your student email (${domainHint}).`));
+      return;
+    }
     if (!password) { setError(tr("Masukkan kata sandi.", "Enter your password.")); return; }
     setBusy(true);
     const result = await login(email, password, role);
@@ -59,8 +64,8 @@ export default function Login() {
       <button type="button" role="tab" aria-selected={role === "staff"} className={role === "staff" ? "active" : ""} onClick={() => pickRole("staff")}><Icon name="building" size={16} />{tr("Staf kampus", "Campus staff")}</button>
     </div>
     <form onSubmit={submit} noValidate>
-      <label className="field">{tr("Email BINUS", "BINUS email")}
-        <span className={`input-icon ${emailBad ? "invalid" : ""}`}><Icon name="mail" size={17} /><input type="email" autoComplete="username" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nama@binus.ac.id" aria-invalid={emailBad} /></span>
+      <label className="field">{role === "staff" ? tr("Email staf BINUS", "BINUS staff email") : tr("Email mahasiswa BINUS", "BINUS student email")}
+        <span className={`input-icon ${emailBad ? "invalid" : ""}`}><Icon name="mail" size={17} /><input type="email" autoComplete="username" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={`nama${domainHint}`} aria-invalid={emailBad} /></span>
         {emailBad && <small className="error-text">{tr(`Hanya email ${domainHint} yang bisa masuk.`, `Only ${domainHint} emails can sign in.`)}</small>}
       </label>
       <label className="field">{tr("Kata sandi", "Password")}
