@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { DEMO_MODE, MODEL_VERSION, STAFF_ACCESS_CODE } from "../config.js";
+import { MODEL_VERSION, STAFF_ACCESS_CODE } from "../config.js";
 import { DEPARTMENTS } from "./analyzer.js";
 import { hashPassword, isAllowedEmail, isValidNim, normalizeEmail } from "./auth.js";
 import { readJSON, readSession, removeKey, writeJSON, writeSession } from "./storage.js";
@@ -167,15 +167,6 @@ export function AppProvider({ children }) {
 
   const logout = () => { setSignedOut(true); setSessionId(null); writeSession(null); };
 
-  // Demo only: jump straight into another demo account without typing a password.
-  const switchAccount = (id) => {
-    if (!DEMO_MODE) return null;
-    const target = live.current.users.find((u) => u.id === id);
-    if (!target) return null;
-    setSessionId(id);
-    writeSession(id);
-    return target;
-  };
 
   const updateProfile = (patch) => {
     saveUsers(live.current.users.map((u) => (u.id === user.id ? { ...u, ...patch } : u)));
@@ -270,7 +261,7 @@ export function AppProvider({ children }) {
   const value = useMemo(() => ({
     user, users, complaints, toast, showToast, signedOut,
     notifications: notifications.filter((n) => n.userId === user?.id),
-    login, register, logout, switchAccount, updateProfile, changePassword,
+    login, register, logout, updateProfile, changePassword,
     submitComplaint, setStatus, addMessage, reassign, rate, reopen, withdraw, markNotificationsRead, resetDemo,
   }), [user, users, complaints, notifications, toast, signedOut]); // eslint-disable-line react-hooks/exhaustive-deps
 

@@ -62,7 +62,7 @@ export default function StaffQueue() {
               <td><CategoryText category={c.category} /></td>
               {user.department === "ALL" && <td><DepartmentText department={c.department} /></td>}
               <td>{studentName(c, tr)}</td>
-              <td>{timeAgo(c.createdAt, lang)}</td>
+              <td className="nowrap">{timeAgo(c.createdAt, lang)}</td>
               <td><StatusPill status={c.status} /></td>
               <td><SlaTag complaint={c} /></td>
             </tr>)}

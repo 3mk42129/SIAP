@@ -610,12 +610,5 @@ h1, h2, h3, p { margin-top: 0; }
   .stat-grid { gap: 8px; }
 }
 
-/* demo account switcher */
-.demo-switch { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 4px 0 10px; border: 1px dashed #b9c9d6; border-radius: 8px; background: #fafcfd; color: var(--blue); }
-.demo-switch select { max-width: 210px; height: 32px; border: 0; background: transparent; color: var(--ink); font-size: 13px; font-weight: 600; outline: 0; cursor: pointer; }
-@media (max-width: 720px) {
-  .demo-switch { padding: 0 2px 0 7px; }
-  .demo-switch select { max-width: 92px; font-size: 12px; }
-}
-
 .role-picker button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 42px; }
+.complaint-table td.nowrap { white-space: nowrap; }
