@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button, Icon } from "../../components/ui.jsx";
 import { ALLOWED_DOMAINS, CAMPUSES } from "../../config.js";
 import { DEPARTMENTS } from "../../lib/analyzer.js";
@@ -17,7 +17,8 @@ export default function Register() {
   const { register, showToast } = useApp();
   const { tr, lang } = useLang();
   const navigate = useNavigate();
-  const [role, setRole] = useState("student");
+  const [params] = useSearchParams();
+  const [role, setRole] = useState(params.get("role") === "staff" ? "staff" : "student");
   const [form, setForm] = useState({ name: "", email: "", nim: "", major: "", campus: CAMPUSES[0], batch: BATCHES[0], staffId: "", department: STAFF_DEPARTMENTS[0], position: "", accessCode: "", password: "", confirm: "" });
   const [touched, setTouched] = useState(false);
   const [error, setError] = useState("");

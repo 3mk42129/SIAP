@@ -20,3 +20,11 @@ export function writeJSON(key, value) {
 export function removeKey(key) {
   try { localStorage.removeItem(key); } catch { /* ignore */ }
 }
+
+// Login session is kept per browser tab, so one tab can be a student and another a staff member.
+export function readSession() {
+  try { return JSON.parse(sessionStorage.getItem("siap.session")); } catch { return null; }
+}
+export function writeSession(id) {
+  try { id ? sessionStorage.setItem("siap.session", JSON.stringify(id)) : sessionStorage.removeItem("siap.session"); } catch { /* ignore */ }
+}

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { DEMO_MODE } from "../config.js";
 import { useApp } from "../lib/store.jsx";
 import { useLang } from "../lib/i18n.jsx";
 import { timeAgo } from "../lib/format.js";
@@ -17,6 +18,36 @@ export function LangSwitch() {
   return <div className="lang-switch" role="group" aria-label="Language">
     {["id", "en"].map((code) => <button key={code} type="button" className={lang === code ? "active" : ""} aria-pressed={lang === code} onClick={() => setLang(code)}>{code.toUpperCase()}</button>)}
   </div>;
+}
+
+const DEMO_IDS = [
+  ["u-student-1", "Mahasiswa · Nadia", "Student · Nadia"],
+  ["u-staff-sa", "Staf Kemahasiswaan · Rina", "Student Affairs · Rina"],
+  ["u-staff-it", "Staf IT/LMS · Andi", "IT/LMS staff · Andi"],
+  ["u-admin", "Admin (semua unit)", "Admin (all departments)"],
+];
+
+// Demo helper: switch accounts in one click. Hidden when DEMO_MODE is false.
+function DemoSwitcher() {
+  const { user, users, switchAccount, showToast } = useApp();
+  const { tr, lang } = useLang();
+  const navigate = useNavigate();
+  if (!DEMO_MODE) return null;
+  const options = DEMO_IDS.filter(([id]) => users.some((u) => u.id === id));
+  const isDemo = options.some(([id]) => id === user.id);
+  const change = (event) => {
+    const target = switchAccount(event.target.value);
+    if (!target) return;
+    navigate(target.role === "staff" ? "/staff" : "/dashboard", { replace: true });
+    showToast(tr(`Sekarang masuk sebagai ${target.name}`, `Now signed in as ${target.name}`));
+  };
+  return <label className="demo-switch" title={tr("Ganti akun demo", "Switch demo account")}>
+    <Icon name="refresh" size={15} />
+    <select value={isDemo ? user.id : ""} onChange={change} aria-label={tr("Ganti akun demo", "Switch demo account")}>
+      {!isDemo && <option value="" disabled>{user.name}</option>}
+      {options.map(([id, idLabel, enLabel]) => <option key={id} value={id}>{lang === "en" ? enLabel : idLabel}</option>)}
+    </select>
+  </label>;
 }
 
 function Notifications() {
@@ -105,6 +136,7 @@ export default function AppShell({ children }) {
         <Link to={isStaff ? "/staff" : "/dashboard"} className="topbar-logo"><Logo /></Link>
         <div className="breadcrumbs"><span>{isStaff ? tr("Staf", "Staff") : tr("Mahasiswa", "Student")}</span><span className="crumb-chevron">›</span><strong>{current?.label}</strong></div>
         <div className="topbar-right">
+          <DemoSwitcher />
           <LangSwitch />
           <Notifications />
           <Link to="/profile" className="topbar-avatar" aria-label={tr("Profil", "Profile")}><Avatar name={user.name} /></Link>

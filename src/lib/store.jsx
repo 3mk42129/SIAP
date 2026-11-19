@@ -1,8 +1,8 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { MODEL_VERSION, STAFF_ACCESS_CODE } from "../config.js";
+import { DEMO_MODE, MODEL_VERSION, STAFF_ACCESS_CODE } from "../config.js";
 import { DEPARTMENTS } from "./analyzer.js";
 import { hashPassword, isAllowedEmail, isValidNim, normalizeEmail } from "./auth.js";
-import { readJSON, removeKey, writeJSON } from "./storage.js";
+import { readJSON, readSession, removeKey, writeJSON, writeSession } from "./storage.js";
 import { SEED_COMPLAINTS, SEED_USERS } from "./seedData.js";
 
 // All data lives in this browser's localStorage. Student and staff accounts share it,
@@ -78,7 +78,7 @@ function ensureData() {
     writeJSON(KEYS.notifications, []);
     writeJSON(KEYS.counter, seed.counter);
     writeJSON(KEYS.version, DATA_VERSION);
-    removeKey(KEYS.session);
+    writeSession(null);
   }
 }
 
@@ -89,7 +89,7 @@ export function AppProvider({ children }) {
   const [users, setUsers] = useState(() => readJSON(KEYS.users, []));
   const [complaints, setComplaints] = useState(() => readJSON(KEYS.complaints, []));
   const [notifications, setNotifications] = useState(() => readJSON(KEYS.notifications, []));
-  const [sessionId, setSessionId] = useState(() => readJSON(KEYS.session, null));
+  const [sessionId, setSessionId] = useState(() => readSession());
   const [toast, setToast] = useState(null);
   const [signedOut, setSignedOut] = useState(false);
 
@@ -133,14 +133,15 @@ export function AppProvider({ children }) {
   const staffFor = (department) => live.current.users.filter((u) => u.role === "staff" && (u.department === "ALL" || u.department === department)).map((u) => u.id);
   const actor = () => ({ id: user.id, name: user.name, role: user.role });
 
-  const login = async (email, password) => {
+  const login = async (email, password, role) => {
     const clean = normalizeEmail(email);
     if (!isAllowedEmail(clean)) return { error: "domain" };
     const found = live.current.users.find((u) => u.email === clean);
     if (!found || (await hashPassword(found.salt, password)) !== found.passwordHash) return { error: "credentials" };
+    if (role && found.role !== role) return { error: "role" };
     setSessionId(found.id);
     setSignedOut(false);
-    writeJSON(KEYS.session, found.id);
+    writeSession(found.id);
     return { user: found };
   };
 
@@ -160,11 +161,21 @@ export function AppProvider({ children }) {
     };
     saveUsers([...users, record]);
     setSessionId(id);
-    writeJSON(KEYS.session, id);
+    writeSession(id);
     return { user: record };
   };
 
-  const logout = () => { setSignedOut(true); setSessionId(null); removeKey(KEYS.session); };
+  const logout = () => { setSignedOut(true); setSessionId(null); writeSession(null); };
+
+  // Demo only: jump straight into another demo account without typing a password.
+  const switchAccount = (id) => {
+    if (!DEMO_MODE) return null;
+    const target = live.current.users.find((u) => u.id === id);
+    if (!target) return null;
+    setSessionId(id);
+    writeSession(id);
+    return target;
+  };
 
   const updateProfile = (patch) => {
     saveUsers(live.current.users.map((u) => (u.id === user.id ? { ...u, ...patch } : u)));
@@ -259,7 +270,7 @@ export function AppProvider({ children }) {
   const value = useMemo(() => ({
     user, users, complaints, toast, showToast, signedOut,
     notifications: notifications.filter((n) => n.userId === user?.id),
-    login, register, logout, updateProfile, changePassword,
+    login, register, logout, switchAccount, updateProfile, changePassword,
     submitComplaint, setStatus, addMessage, reassign, rate, reopen, withdraw, markNotificationsRead, resetDemo,
   }), [user, users, complaints, notifications, toast, signedOut]); // eslint-disable-line react-hooks/exhaustive-deps
 
