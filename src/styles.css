@@ -629,3 +629,9 @@ h1, h2, h3, p { margin-top: 0; }
 .chip-danger { color: var(--red); }
 .chip-danger:hover { border-color: #e3a79b; background: var(--red-soft); }
 .side-panel input[type="datetime-local"] { font-family: inherit; color: var(--ink); }
+
+.attach-button { position: relative; cursor: pointer; }
+.attach-button input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.reply-photos { margin: 0 0 12px; }
+.timeline .photo-grid { margin-top: 8px; }
+.timeline .photo-grid img { width: 132px; height: 99px; }

@@ -1,21 +1,42 @@
 import React, { useState } from "react";
 import { useLang } from "../lib/i18n.jsx";
-import { formatDateTime } from "../lib/format.js";
+import { compressImage, formatDateTime } from "../lib/format.js";
 import { useApp } from "../lib/store.jsx";
 import { AiResult, Button, Icon, Modal, Photos, ProgressTrack, Stars, StatusPill, Timeline } from "./ui.jsx";
+
+// Photos per complaint in total (first submission + later additions). Keeps browser storage in check.
+const MAX_PHOTOS_TOTAL = 6;
 
 export default function StudentComplaintDialog({ complaint, onClose }) {
   const { addMessage, rate, reopen, withdraw, showToast } = useApp();
   const { tr, locale } = useLang();
   const [message, setMessage] = useState("");
+  const [photos, setPhotos] = useState([]);
+  const sentPhotos = (complaint.photos?.length || 0) + complaint.timeline.reduce((n, t) => n + (t.photos?.length || 0), 0);
+  const room = Math.max(0, MAX_PHOTOS_TOTAL - sentPhotos - photos.length);
+
+  const addPhotos = async (files) => {
+    const picked = Array.from(files || []).filter((f) => f.type.startsWith("image/"));
+    if (picked.length > room) showToast(tr(`Maksimal ${MAX_PHOTOS_TOTAL} foto per keluhan.`, `Up to ${MAX_PHOTOS_TOTAL} photos per complaint.`), "error");
+    try {
+      const shrunk = await Promise.all(picked.slice(0, room).map((f) => compressImage(f)));
+      setPhotos((current) => [...current, ...shrunk]);
+    } catch {
+      showToast(tr("Foto tidak bisa dibaca.", "Couldn't read that photo."), "error");
+    }
+  };
   const [stars, setStars] = useState(0);
   const [comment, setComment] = useState("");
 
   const send = () => {
-    if (!message.trim()) return;
-    addMessage(complaint.id, message);
+    if (!message.trim() && !photos.length) return;
+    if (!addMessage(complaint.id, message, false, photos)) {
+      showToast(tr("Penyimpanan browser penuh. Kurangi foto lalu coba lagi.", "Browser storage is full. Remove some photos and try again."), "error");
+      return;
+    }
+    showToast(photos.length ? tr(`${photos.length} foto terkirim ke staf.`, `${photos.length} photo(s) sent to staff.`) : tr("Pesan terkirim ke staf.", "Message sent to staff."));
     setMessage("");
-    showToast(tr("Pesan terkirim ke staf.", "Message sent to staff."));
+    setPhotos([]);
   };
   const submitRating = () => {
     if (!stars) return;
@@ -53,8 +74,14 @@ export default function StudentComplaintDialog({ complaint, onClose }) {
 
     {complaint.status !== "resolved" && <div className="reply-box">
       <label className="field">{tr("Tambah informasi / balas staf", "Add details / reply to staff")}
-        <textarea rows={3} value={message} onChange={(e) => setMessage(e.target.value)} maxLength={1000} placeholder={tr("Tulis pesan…", "Write a message…")} /></label>
-      <Button icon="send" onClick={send} disabled={!message.trim()}>{tr("Kirim", "Send")}</Button>
+        <textarea rows={3} value={message} onChange={(e) => setMessage(e.target.value)} maxLength={1000} placeholder={tr("Tulis pesan atau tambahkan foto…", "Write a message or add photos…")} /></label>
+      {photos.length > 0 && <div className="photo-picker reply-photos">{photos.map((src, i) => <div key={i} className="photo-thumb"><img src={src} alt="" /><button type="button" className="icon-button" aria-label={tr("Hapus foto", "Remove photo")} onClick={() => setPhotos(photos.filter((_, j) => j !== i))}><Icon name="close" size={14} /></button></div>)}</div>}
+      <div className="reply-actions">
+        {room > 0
+          ? <label className="button button-secondary attach-button"><input type="file" accept="image/*" multiple onChange={(e) => { addPhotos(e.target.files); e.target.value = ""; }} /><Icon name="image" size={16} />{tr("Tambah foto", "Add photos")}</label>
+          : <small className="hint">{tr(`Batas ${MAX_PHOTOS_TOTAL} foto per keluhan tercapai.`, `${MAX_PHOTOS_TOTAL}-photo limit reached.`)}</small>}
+        <Button icon="send" onClick={send} disabled={!message.trim() && !photos.length}>{tr("Kirim", "Send")}</Button>
+      </div>
     </div>}
 
     {complaint.status === "resolved" && !complaint.rating && <div className="rating-box">

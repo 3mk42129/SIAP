@@ -222,13 +222,14 @@ export function AppProvider({ children }) {
 
   const updateComplaint = (id, change, notice) => {
     const target = live.current.complaints.find((c) => c.id === id);
-    if (!target) return;
+    if (!target) return false;
     const updated = { ...change(target), updatedAt: Date.now() };
-    saveComplaints(live.current.complaints.map((c) => (c.id === id ? updated : c)));
+    if (!saveComplaints(live.current.complaints.map((c) => (c.id === id ? updated : c)))) return false;
     if (notice) {
       const recipients = user.role === "staff" ? [target.studentId] : staffFor(updated.department);
       saveNotifications(notify(live.current.notifications, recipients.filter((r) => r !== user.id), id, notice));
     }
+    return true;
   };
 
   const setStatus = (id, status) => updateComplaint(id, (c) => ({
@@ -241,13 +242,14 @@ export function AppProvider({ children }) {
     en: `Complaint ${id} is now "${{ submitted: "Submitted", in_review: "In review", resolved: "Resolved" }[status]}".`,
   });
 
-  const addMessage = (id, text, internal = false) => updateComplaint(id, (c) => ({
+  // A message can carry photos (e.g. a student adding more pictures after sending).
+  const addMessage = (id, text, internal = false, photos = []) => updateComplaint(id, (c) => ({
     ...c,
     firstResponseAt: c.firstResponseAt || (user.role === "staff" && !internal ? Date.now() : null),
-    timeline: [...c.timeline, { id: uid("t"), at: Date.now(), type: internal ? "note" : "reply", by: actor(), text: text.trim() }],
+    timeline: [...c.timeline, { id: uid("t"), at: Date.now(), type: internal ? "note" : "reply", by: actor(), text: text.trim(), ...(photos.length ? { photos } : {}) }],
   }), internal ? null : {
-    id: user.role === "staff" ? `Balasan baru untuk ${id} dari ${user.name}.` : `Mahasiswa membalas keluhan ${id}.`,
-    en: user.role === "staff" ? `New reply on ${id} from ${user.name}.` : `The student replied on ${id}.`,
+    id: user.role === "staff" ? `Balasan baru untuk ${id} dari ${user.name}.` : photos.length ? `Mahasiswa menambahkan ${photos.length} foto pada keluhan ${id}.` : `Mahasiswa membalas keluhan ${id}.`,
+    en: user.role === "staff" ? `New reply on ${id} from ${user.name}.` : photos.length ? `The student added ${photos.length} photo(s) to ${id}.` : `The student replied on ${id}.`,
   });
 
   const reassign = (id, department) => {

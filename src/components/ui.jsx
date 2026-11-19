@@ -188,6 +188,7 @@ export function Timeline({ complaint, viewer }) {
         <div>
           <p className="timeline-meta"><strong>{who(t)}</strong>{t.type === "note" && <span className="note-tag">{tr("Catatan internal", "Internal note")}</span>}{body && <span> {body}</span>}<time dateTime={new Date(t.at).toISOString()}>{formatDateTime(t.at, locale)}</time></p>
           {isMessage && t.text && <p className="timeline-text">{t.text}</p>}
+          {t.photos?.length > 0 && <Photos photos={t.photos} />}
         </div>
       </li>;
     })}
