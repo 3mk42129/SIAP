@@ -205,10 +205,11 @@ export const SEED_COMPLAINTS = [
    "confidence": 0.8451405688730382,
    "unclassified": false,
    "safetyOverride": false,
-   "urgencyScore": 3,
-   "urgencyLevel": "Minor",
+   "urgencyScore": 5,
+   "urgencyLevel": "Moderate",
    "urgencyReasons": [
     "prolonged",
+    "money",
     "category"
    ]
   },
@@ -302,10 +303,11 @@ export const SEED_COMPLAINTS = [
    "confidence": 0.9770069622534174,
    "unclassified": false,
    "safetyOverride": false,
-   "urgencyScore": 2,
-   "urgencyLevel": "Minor",
+   "urgencyScore": 5,
+   "urgencyLevel": "Moderate",
    "urgencyReasons": [
-    "prolonged"
+    "prolonged",
+    "statusAtRisk"
    ]
   },
   "reassign": null,
@@ -442,10 +444,11 @@ export const SEED_COMPLAINTS = [
    "confidence": 0.3266638503886614,
    "unclassified": false,
    "safetyOverride": false,
-   "urgencyScore": 2,
-   "urgencyLevel": "Minor",
+   "urgencyScore": 4,
+   "urgencyLevel": "Moderate",
    "urgencyReasons": [
-    "prolonged"
+    "prolonged",
+    "mentalHealth"
    ]
   },
   "reassign": {
