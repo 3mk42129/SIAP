@@ -11,6 +11,7 @@ export const CATEGORY_LABELS = {
   "Online learning": { id: "Pembelajaran Daring", en: "Online Learning" },
   "Student Activities": { id: "Kegiatan Mahasiswa", en: "Student Activities" },
   "Student Affairs": { id: "Kemahasiswaan", en: "Student Affairs" },
+  Unclassified: { id: "Belum terklasifikasi", en: "Not classified yet" },
 };
 
 export const DEPARTMENT_LABELS = {
@@ -25,6 +26,7 @@ export const DEPARTMENT_LABELS = {
   "IT / Learning Management Support": { id: "Dukungan IT / LMS", en: "IT / LMS Support" },
   "Student Activities Office": { id: "Bagian Kegiatan Mahasiswa", en: "Student Activities Office" },
   "Student Affairs Office": { id: "Bagian Kemahasiswaan", en: "Student Affairs Office" },
+  "SIAP Coordinator": { id: "Koordinator SIAP (triase manual)", en: "SIAP coordinator (manual triage)" },
   ALL: { id: "Semua unit", en: "All departments" },
 };
 

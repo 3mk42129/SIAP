@@ -25,6 +25,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [remember, setRemember] = useState(true);
   const [role, setRole] = useState(() => (location.state?.from?.startsWith("/staff") ? "staff" : "student"));
   const pickRole = (next) => { setRole(next); setError(""); setEmail(""); setPassword(""); };
   const domainHint = hintFor(role);
@@ -41,7 +42,7 @@ export default function Login() {
     }
     if (!password) { setError(tr("Masukkan kata sandi.", "Enter your password.")); return; }
     setBusy(true);
-    const result = await login(email, password, role);
+    const result = await login(email, password, role, remember);
     setBusy(false);
     if (result.error === "role") {
       setError(role === "staff"
@@ -72,6 +73,7 @@ export default function Login() {
         <span className="input-icon"><Icon name="lock" size={17} /><input type={showPassword ? "text" : "password"} autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
           <button type="button" className="input-action" onClick={() => setShowPassword(!showPassword)}>{showPassword ? tr("Sembunyikan", "Hide") : tr("Lihat", "Show")}</button></span>
       </label>
+      <label className="check-inline remember-me"><input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />{tr("Tetap masuk di perangkat ini", "Keep me signed in on this device")}</label>
       {error && <p className="form-error" role="alert"><Icon name="alert" size={16} />{error}</p>}
       <Button type="submit" className="button-block" disabled={busy}>{busy ? tr("Memeriksa…", "Checking…") : role === "staff" ? tr("Masuk sebagai staf", "Sign in as staff") : tr("Masuk sebagai mahasiswa", "Sign in as student")}</Button>
     </form>

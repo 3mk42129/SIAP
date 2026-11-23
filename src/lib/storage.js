@@ -21,10 +21,19 @@ export function removeKey(key) {
   try { localStorage.removeItem(key); } catch { /* ignore */ }
 }
 
-// Login session is kept per browser tab, so one tab can be a student and another a staff member.
+// Login session. Each tab keeps its own (sessionStorage), so a reload never switches accounts.
+// With "remember me" the session is also saved in localStorage, so new tabs and a reopened browser stay signed in.
 export function readSession() {
-  try { return JSON.parse(sessionStorage.getItem("siap.session")); } catch { return null; }
+  try { return JSON.parse(sessionStorage.getItem("siap.session")) || JSON.parse(localStorage.getItem("siap.remember")); } catch { return null; }
 }
-export function writeSession(id) {
-  try { id ? sessionStorage.setItem("siap.session", JSON.stringify(id)) : sessionStorage.removeItem("siap.session"); } catch { /* ignore */ }
+export function writeSession(id, remember = false) {
+  try {
+    if (id) {
+      sessionStorage.setItem("siap.session", JSON.stringify(id));
+      if (remember) localStorage.setItem("siap.remember", JSON.stringify(id));
+    } else {
+      sessionStorage.removeItem("siap.session");
+      localStorage.removeItem("siap.remember");
+    }
+  } catch { /* ignore */ }
 }

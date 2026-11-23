@@ -111,17 +111,23 @@ export function safetyCategory(text) {
 }
 
 // Full pipeline: safety override -> classifier -> department -> urgency.
+// Used when the AI model couldn't be loaded: the complaint goes to the SIAP coordinator for manual triage.
+export const UNCLASSIFIED = "Unclassified";
+export const TRIAGE_DEPARTMENT = "SIAP Coordinator";
+
 export function analyzeComplaint(model, text) {
   const clean = (text || "").trim();
   if (!clean) return null;
+  // Safety rules and urgency rules don't need the model, so they still run without it.
   const override = safetyCategory(clean);
-  const prediction = override ? null : predict(model, clean);
-  const category = override || prediction.category;
+  const prediction = override || !model ? null : predict(model, clean);
+  const category = override || prediction?.category || UNCLASSIFIED;
   const urgency = scoreUrgency(clean, category);
   return {
     category,
-    department: DEPARTMENTS[category] || "General Office",
-    confidence: override ? 1 : prediction.confidence,
+    department: DEPARTMENTS[category] || TRIAGE_DEPARTMENT,
+    confidence: override ? 1 : prediction ? prediction.confidence : 0,
+    unclassified: category === UNCLASSIFIED,
     safetyOverride: Boolean(override),
     urgencyScore: urgency.score,
     urgencyLevel: urgency.level,

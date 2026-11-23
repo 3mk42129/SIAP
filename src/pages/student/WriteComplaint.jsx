@@ -65,21 +65,18 @@ export default function WriteComplaint() {
     setTried(true);
     if (!subject.trim() || !ready || !confirmed) return;
     setBusy(true);
-    try {
-      const loaded = model || (await getModel());
-      const ai = analyzeComplaint(loaded, text);
-      const result = submitComplaint({ subject, details, location, anonymous, photos, ai });
-      if (result.error) {
-        showToast(tr("Penyimpanan browser penuh. Kurangi foto lalu coba lagi.", "Browser storage is full. Remove some photos and try again."), "error");
-        return;
-      }
-      removeKey(draftKey);
-      setDone(result.complaint);
-    } catch {
-      showToast(tr("Model AI gagal dimuat. Periksa koneksi lalu coba lagi.", "The AI model failed to load. Check your connection and try again."), "error");
-    } finally {
-      setBusy(false);
+    // Never lose a complaint because the AI model couldn't download: send it for manual triage instead.
+    let loaded = model;
+    if (!loaded) { try { loaded = await getModel(); } catch { loaded = null; } }
+    const ai = analyzeComplaint(loaded, text);
+    const result = submitComplaint({ subject, details, location, anonymous, photos, ai });
+    setBusy(false);
+    if (result.error) {
+      showToast(tr("Penyimpanan browser penuh. Kurangi foto lalu coba lagi.", "Browser storage is full. Remove some photos and try again."), "error");
+      return;
     }
+    removeKey(draftKey);
+    setDone(result.complaint);
   };
 
   if (done) {
@@ -128,7 +125,7 @@ export default function WriteComplaint() {
           <Toggle id="anon" label={tr("Kirim secara anonim", "Send anonymously")} description={tr("Nama, NIM, dan email kamu disembunyikan dari staf. Kamu tetap bisa memantau statusnya.", "Your name, student ID and email are hidden from staff. You can still track the status.")} checked={anonymous} onChange={setAnonymous} />
         </section>
 
-        <label className="confirm-check"><input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} /><span>{tr("Saya menyatakan informasi ini benar dan setuju keluhan ini diteruskan ke unit kampus yang menanganinya.", "I confirm this information is accurate and agree to it being shared with the campus department handling it.")}</span></label>
+        <label className="confirm-check"><input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} /><span>{tr("Saya menyatakan informasi ini benar dan setuju keluhan ini diteruskan ke unit kampus yang menanganinya. Isi keluhan tanpa data pribadi dapat dipakai untuk meningkatkan akurasi AI SIAP.", "I confirm this information is accurate and agree to it being shared with the campus department handling it. The complaint text, with personal details removed, may be used to improve SIAP's AI.")}</span></label>
         {tried && !confirmed && <small className="error-text confirm-error">{tr("Centang konfirmasi sebelum mengirim.", "Please confirm before sending.")}</small>}
         <div className="form-actions">
           <button type="button" className="text-button cancel-link" onClick={() => navigate("/dashboard")}>{tr("Batal", "Cancel")}</button>
@@ -140,7 +137,7 @@ export default function WriteComplaint() {
         <section className="panel ai-panel" aria-live="polite">
           <div className="ai-panel-head"><Icon name="sparkle" size={18} /><h2>{tr("Analisis AI", "AI analysis")}</h2><span className={`model-dot ${model ? "ready" : modelError ? "error" : ""}`}>{model ? tr("aktif", "live") : modelError ? tr("gagal", "error") : tr("memuat", "loading")}</span></div>
           {preview ? <AiResult ai={preview} /> : <p className="ai-placeholder">{modelError
-            ? tr("Model AI gagal dimuat. Keluhan tetap bisa dikirim setelah koneksi pulih.", "The AI model failed to load. You can send once the connection is back.")
+            ? tr("Model AI gagal dimuat. Keluhan tetap bisa dikirim — Koordinator SIAP akan meneruskannya secara manual.", "The AI model failed to load. You can still send — the SIAP coordinator will route it manually.")
             : tr("Mulai menulis — kategori, unit tujuan, dan skor urgensi akan muncul di sini secara otomatis.", "Start typing — the category, department and urgency score appear here automatically.")}</p>}
         </section>
         <div className="tip-card"><Icon name="info" size={18} /><h2>{tr("Tips menulis", "Writing tips")}</h2><ul>

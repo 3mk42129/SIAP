@@ -87,16 +87,31 @@ function buildSeed() {
   return { users, complaints, counter: SEED_COMPLAINTS.length };
 }
 
+function seedAll() {
+  const seed = buildSeed();
+  writeJSON(KEYS.users, seed.users);
+  writeJSON(KEYS.complaints, seed.complaints);
+  writeJSON(KEYS.notifications, []);
+  writeJSON(KEYS.counter, seed.counter);
+  writeJSON(KEYS.version, DATA_VERSION);
+  writeSession(null);
+}
+
+// First visit: load the demo data. After an app update: upgrade the saved data in place —
+// never wipe it, so real accounts and complaints survive new versions. ("Reset data demo" still wipes on purpose.)
 function ensureData() {
-  if (readJSON(KEYS.version, 0) !== DATA_VERSION || !readJSON(KEYS.users, null)) {
-    const seed = buildSeed();
-    writeJSON(KEYS.users, seed.users);
-    writeJSON(KEYS.complaints, seed.complaints);
-    writeJSON(KEYS.notifications, []);
-    writeJSON(KEYS.counter, seed.counter);
-    writeJSON(KEYS.version, DATA_VERSION);
-    writeSession(null);
-  }
+  const users = readJSON(KEYS.users, null);
+  if (!users) { seedAll(); return; }
+  if (readJSON(KEYS.version, 0) === DATA_VERSION) return;
+  const seedUsers = Object.fromEntries(SEED_USERS.map((u) => [u.id, u]));
+  // demo accounts follow the latest definition (e.g. new staff email domain); real accounts are untouched
+  const upgradedUsers = users.map((u) => (seedUsers[u.id] ? { ...u, ...seedUsers[u.id] } : u));
+  writeJSON(KEYS.users, upgradedUsers);
+  const complaints = readJSON(KEYS.complaints, []).map((c) => ({
+    photos: [], urgency: null, dueAt: null, rating: null, firstResponseAt: null, resolvedAt: null, ...c,
+  }));
+  writeJSON(KEYS.complaints, complaints);
+  writeJSON(KEYS.version, DATA_VERSION);
 }
 
 const AppContext = createContext(null);
@@ -150,7 +165,7 @@ export function AppProvider({ children }) {
   const staffFor = (department) => live.current.users.filter((u) => u.role === "staff" && (u.department === "ALL" || u.department === department)).map((u) => u.id);
   const actor = () => ({ id: user.id, name: user.name, role: user.role });
 
-  const login = async (email, password, role) => {
+  const login = async (email, password, role, remember = false) => {
     const clean = normalizeEmail(email);
     if (!isAllowedEmail(clean, role)) return { error: "domain" };
     const found = live.current.users.find((u) => u.email === clean);
@@ -158,7 +173,7 @@ export function AppProvider({ children }) {
     if (role && found.role !== role) return { error: "role" };
     setSessionId(found.id);
     setSignedOut(false);
-    writeSession(found.id);
+    writeSession(found.id, remember);
     return { user: found };
   };
 
@@ -178,7 +193,7 @@ export function AppProvider({ children }) {
     };
     saveUsers([...users, record]);
     setSessionId(id);
-    writeSession(id);
+    writeSession(id, true);
     return { user: record };
   };
 
@@ -298,7 +313,7 @@ export function AppProvider({ children }) {
 
   const markNotificationsRead = () => saveNotifications(live.current.notifications.map((n) => (n.userId === user?.id ? { ...n, read: true } : n)));
 
-  const resetDemo = () => { removeKey(KEYS.version); window.location.assign("/login"); };
+  const resetDemo = () => { removeKey(KEYS.users); writeSession(null); window.location.assign("/login"); };
 
   const value = useMemo(() => ({
     user, users, complaints, toast, showToast, signedOut,

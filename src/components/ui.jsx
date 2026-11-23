@@ -96,13 +96,14 @@ export function UrgencyMeter({ score, level }) {
 // What the AI decided for a complaint: category, department, urgency and why.
 export function AiResult({ ai, current, compact = false }) {
   const { tr, lang } = useLang();
-  const lowConfidence = !ai.safetyOverride && ai.confidence < LOW_CONFIDENCE;
+  const lowConfidence = !ai.safetyOverride && !ai.unclassified && ai.confidence < LOW_CONFIDENCE;
   const moved = current && current.department !== ai.department;
   return <div className={`ai-result ${compact ? "ai-compact" : ""}`}>
     <div className="ai-row"><span className="ai-label"><Icon name="sparkle" size={14} />{tr("Kategori", "Category")}</span><strong><CategoryText category={ai.category} /></strong></div>
     <div className="ai-row"><span className="ai-label"><Icon name="route" size={14} />{tr("Diteruskan ke", "Routed to")}</span><strong><DepartmentText department={ai.department} /></strong></div>
     <div className="ai-row"><span className="ai-label"><Icon name="alert" size={14} />{tr("Urgensi", "Urgency")}</span><span className="ai-urgency"><UrgencyMeter score={ai.urgencyScore} level={ai.urgencyLevel} /><UrgencyBadge level={ai.urgencyLevel} score={ai.urgencyScore} /></span></div>
     {!compact && ai.urgencyReasons.length > 0 && <div className="reason-list">{ai.urgencyReasons.map((r) => <span key={r}>{label(REASON_LABELS, r, lang)}</span>)}</div>}
+    {ai.unclassified && <p className="ai-note"><Icon name="info" size={14} />{tr("AI belum bisa menganalisis keluhan ini. Koordinator SIAP akan meneruskannya ke unit yang tepat.", "The AI couldn't analyse this complaint. The SIAP coordinator will forward it to the right team.")}</p>}
     {ai.safetyOverride && <p className="ai-note ai-note-safety"><Icon name="shield" size={14} />{tr("Terdeteksi kata kunci keamanan — langsung diteruskan ke tim yang tepat dan diprioritaskan.", "Safety keywords detected — sent straight to the right team and prioritised.")}</p>}
     {lowConfidence && <p className="ai-note"><Icon name="info" size={14} />{tr("Keyakinan AI rendah — staf akan memeriksa ulang kategorinya.", "Low AI confidence — staff will double-check the category.")}</p>}
     {current?.urgency && <p className="ai-note"><Icon name="alert" size={14} />{tr("Urgensi diubah staf menjadi", "Urgency changed by staff to")} <strong>&nbsp;{current.urgency.score}/10</strong></p>}
