@@ -5,9 +5,17 @@ import { useLang } from "../lib/i18n.jsx";
 import { timeAgo } from "../lib/format.js";
 import { Avatar, DepartmentText, Icon } from "./ui.jsx";
 
+// SIAP mark (design C): a complaint bubble with a check — "siap" = ready / handled.
+export function LogoMark({ light = false, size = 34 }) {
+  return <svg className="logo-mark" width={size} height={size} viewBox="0 0 64 64" aria-hidden="true">
+    <path d="M14 8H50A10 10 0 0 1 60 18V40A10 10 0 0 1 50 50H28L16 59V50H14A10 10 0 0 1 4 40V18A10 10 0 0 1 14 8Z" fill={light ? "#FFFFFF" : "#183C59"} />
+    <path d="M20 29.5L28 37.5L44 21.5" fill="none" stroke="#F2B33D" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>;
+}
+
 export function Logo({ light = false }) {
   return <span className={`logo ${light ? "logo-light" : ""}`}>
-    <span className="logo-mark" aria-hidden="true">S</span>
+    <LogoMark light={light} />
     <span className="logo-text">SIAP<small>Sistem Aduan Pintar</small></span>
   </span>;
 }

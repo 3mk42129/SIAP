@@ -45,9 +45,8 @@ h1, h2, h3, p { margin-top: 0; }
 
 /* ---------- logo ---------- */
 .logo { display: inline-flex; align-items: center; gap: 10px; color: var(--navy); }
-.logo-mark { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; background: var(--navy); color: var(--accent); font: 700 19px/1 Manrope, sans-serif; }
-.logo-light .logo-mark { background: #ffffff1a; }
-.logo-text { font: 700 17px/1.05 Manrope, sans-serif; letter-spacing: .02em; }
+.logo-mark { flex: 0 0 auto; display: block; }
+.logo-text { font: 800 18px/1.05 Manrope, sans-serif; letter-spacing: .02em; }
 .logo-text small { display: block; margin-top: 3px; font: 500 10.5px/1 "DM Sans", sans-serif; letter-spacing: .04em; opacity: .75; }
 .logo-light { color: #fff; }
 
