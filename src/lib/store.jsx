@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { MODEL_VERSION, STAFF_ACCESS_CODE } from "../config.js";
-import { DEPARTMENTS } from "./analyzer.js";
+import { DEPARTMENTS, scoreUrgency } from "./analyzer.js";
 import { hashPassword, isAllowedEmail, isValidNim, normalizeEmail } from "./auth.js";
 import { readJSON, readSession, removeKey, writeJSON, writeSession } from "./storage.js";
 import { SEED_COMPLAINTS, SEED_USERS } from "./seedData.js";
@@ -9,7 +9,7 @@ import { SEED_COMPLAINTS, SEED_USERS } from "./seedData.js";
 // so a complaint sent in one tab shows up for staff in another tab of the same browser.
 // For real multi-device use, swap these reads/writes for a database (e.g. Supabase).
 const KEYS = { users: "siap.users", session: "siap.session", complaints: "siap.complaints", notifications: "siap.notifications", counter: "siap.counter", version: "siap.dataVersion" };
-const DATA_VERSION = 5;
+const DATA_VERSION = 6;
 
 const CATEGORY_BY_DEPARTMENT = Object.fromEntries(Object.entries(DEPARTMENTS).map(([cat, dept]) => [dept, cat]));
 const DAY = 86400000;
@@ -107,9 +107,15 @@ function ensureData() {
   // demo accounts follow the latest definition (e.g. new staff email domain); real accounts are untouched
   const upgradedUsers = users.map((u) => (seedUsers[u.id] ? { ...u, ...seedUsers[u.id] } : u));
   writeJSON(KEYS.users, upgradedUsers);
-  const complaints = readJSON(KEYS.complaints, []).map((c) => ({
-    photos: [], urgency: null, dueAt: null, rating: null, firstResponseAt: null, resolvedAt: null, ...c,
-  }));
+  // Urgency rules may have improved: re-score the AI urgency with the current rules
+  // (the AI category and any staff override stay as they are).
+  const complaints = readJSON(KEYS.complaints, []).map((c) => {
+    const u = scoreUrgency(`${c.subject}. ${c.details}`, c.ai.category);
+    return {
+      photos: [], urgency: null, dueAt: null, rating: null, firstResponseAt: null, resolvedAt: null, ...c,
+      ai: { ...c.ai, urgencyScore: u.score, urgencyLevel: u.level, urgencyReasons: u.reasons },
+    };
+  });
   writeJSON(KEYS.complaints, complaints);
   writeJSON(KEYS.version, DATA_VERSION);
 }

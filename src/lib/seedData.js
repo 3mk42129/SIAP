@@ -137,13 +137,13 @@ export const SEED_COMPLAINTS = [
    "category": "Academic Support and Resources",
    "department": "Academic Affairs Office",
    "confidence": 0.4819892056350792,
+   "unclassified": false,
    "safetyOverride": false,
-   "urgencyScore": 5,
+   "urgencyScore": 4,
    "urgencyLevel": "Moderate",
    "urgencyReasons": [
     "breakdown",
-    "prolonged",
-    "intensity"
+    "prolonged"
    ]
   },
   "reassign": {
@@ -176,6 +176,7 @@ export const SEED_COMPLAINTS = [
    "category": "Housing and Transportation",
    "department": "Facilities & Housing Office",
    "confidence": 0.49082008824151324,
+   "unclassified": false,
    "safetyOverride": false,
    "urgencyScore": 3,
    "urgencyLevel": "Minor",
@@ -202,6 +203,7 @@ export const SEED_COMPLAINTS = [
    "category": "Financial Support",
    "department": "Finance / Scholarship Office",
    "confidence": 0.8451405688730382,
+   "unclassified": false,
    "safetyOverride": false,
    "urgencyScore": 3,
    "urgencyLevel": "Minor",
@@ -236,10 +238,13 @@ export const SEED_COMPLAINTS = [
    "category": "Food and Cantines",
    "department": "Campus Services (Food & Facilities)",
    "confidence": 0.999841824937664,
+   "unclassified": false,
    "safetyOverride": false,
-   "urgencyScore": 1,
+   "urgencyScore": 2,
    "urgencyLevel": "Minor",
-   "urgencyReasons": []
+   "urgencyReasons": [
+    "prolonged"
+   ]
   },
   "reassign": null,
   "reply": [
@@ -267,6 +272,7 @@ export const SEED_COMPLAINTS = [
    "category": "Student Affairs",
    "department": "Student Affairs Office",
    "confidence": 1,
+   "unclassified": false,
    "safetyOverride": true,
    "urgencyScore": 9,
    "urgencyLevel": "High",
@@ -294,6 +300,7 @@ export const SEED_COMPLAINTS = [
    "category": "International student experiences",
    "department": "International Student Office",
    "confidence": 0.9770069622534174,
+   "unclassified": false,
    "safetyOverride": false,
    "urgencyScore": 2,
    "urgencyLevel": "Minor",
@@ -320,6 +327,7 @@ export const SEED_COMPLAINTS = [
    "category": "Internship Opportunities",
    "department": "Career Center",
    "confidence": 0.9845097023070264,
+   "unclassified": false,
    "safetyOverride": false,
    "urgencyScore": 1,
    "urgencyLevel": "Minor",
@@ -344,6 +352,7 @@ export const SEED_COMPLAINTS = [
    "category": "Housing and Transportation",
    "department": "Facilities & Housing Office",
    "confidence": 0.6193960207956709,
+   "unclassified": false,
    "safetyOverride": false,
    "urgencyScore": 10,
    "urgencyLevel": "High",
@@ -374,11 +383,13 @@ export const SEED_COMPLAINTS = [
    "category": "Housing and Transportation",
    "department": "Facilities & Housing Office",
    "confidence": 0.9927054447266109,
+   "unclassified": false,
    "safetyOverride": false,
-   "urgencyScore": 2,
-   "urgencyLevel": "Minor",
+   "urgencyScore": 4,
+   "urgencyLevel": "Moderate",
    "urgencyReasons": [
-    "prolonged"
+    "prolonged",
+    "studyImpact"
    ]
   },
   "reassign": null,
@@ -400,6 +411,7 @@ export const SEED_COMPLAINTS = [
    "category": "Online learning",
    "department": "IT / Learning Management Support",
    "confidence": 0.33518221841740625,
+   "unclassified": false,
    "safetyOverride": false,
    "urgencyScore": 6,
    "urgencyLevel": "Moderate",
@@ -428,6 +440,7 @@ export const SEED_COMPLAINTS = [
    "category": "Academic Support and Resources",
    "department": "Academic Affairs Office",
    "confidence": 0.3266638503886614,
+   "unclassified": false,
    "safetyOverride": false,
    "urgencyScore": 2,
    "urgencyLevel": "Minor",
@@ -461,12 +474,11 @@ export const SEED_COMPLAINTS = [
    "category": "Student Activities",
    "department": "Student Activities Office",
    "confidence": 0.17558683291752514,
+   "unclassified": false,
    "safetyOverride": false,
-   "urgencyScore": 2,
+   "urgencyScore": 1,
    "urgencyLevel": "Minor",
-   "urgencyReasons": [
-    "intensity"
-   ]
+   "urgencyReasons": []
   },
   "reassign": null,
   "reply": [

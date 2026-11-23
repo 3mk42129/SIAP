@@ -46,9 +46,10 @@ export const REASON_LABELS = {
   safety: { id: "Keamanan / krisis", en: "Safety / crisis" },
   urgentWording: { id: "Kata mendesak", en: "Urgent wording" },
   breakdown: { id: "Ada yang rusak", en: "Something broken" },
+  studyImpact: { id: "Mengganggu perkuliahan", en: "Affects studies" },
   prolonged: { id: "Sudah berlarut-larut", en: "Ongoing problem" },
   ignored: { id: "Belum ditanggapi", en: "No response yet" },
-  intensity: { id: "Nada mendesak (!/HURUF BESAR)", en: "Intense tone (!/CAPS)" },
+  intensity: { id: "Nada mendesak (! / HURUF BESAR)", en: "Intense tone (! / CAPS)" },
   category: { id: "Kategori prioritas", en: "Priority category" },
 };
 
